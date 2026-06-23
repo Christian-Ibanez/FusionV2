@@ -1,0 +1,37 @@
+services:
+  postgres-db:
+    image: postgis/postgis:16-3.4
+    container_name: db_coincidencias
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_coincidencias
+    ports:
+      - "5435:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - coincidencias_postgres_data:/var/lib/postgresql/data
+
+  coincidencias-app:
+    build: .
+    container_name: coincidencias-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_coincidencias:5432/db_coincidencias
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - NOTIFICACION_SERVICE_URL=http://notificaciones-app:8083
+      - REPORTES_SERVICE_URL=http://reportes-service:8081
+    depends_on:
+      - postgres-db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  coincidencias_postgres_data:

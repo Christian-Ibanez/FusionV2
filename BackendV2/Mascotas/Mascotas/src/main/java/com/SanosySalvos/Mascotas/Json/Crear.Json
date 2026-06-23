@@ -1,0 +1,37 @@
+[
+  {
+    "nombre": "Luna",
+    "raza": "Siberian Husky",
+    "color": "Gris y Blanco",
+    "edad": 2,
+    "imagenUrl": "http://ejemplo.com/luna.jpg"
+  },
+  {
+    "nombre": "Max",
+    "raza": "Pastor Alemán",
+    "color": "Negro y Fuego",
+    "edad": 5,
+    "imagenUrl": "http://ejemplo.com/max.jpg"
+  },
+  {
+    "nombre": "Coco",
+    "raza": "Poodle",
+    "color": "Blanco",
+    "edad": 1,
+    "imagenUrl": "http://ejemplo.com/coco.jpg"
+  },
+  {
+    "nombre": "Rocky",
+    "raza": "Bulldog Francés",
+    "color": "Atigrado",
+    "edad": 4,
+    "imagenUrl": "http://ejemplo.com/rocky.jpg"
+  },
+  {
+    "nombre": "Bella",
+    "raza": "Golden Retriever",
+    "color": "Crema",
+    "edad": 6,
+    "imagenUrl": "http://ejemplo.com/bella.jpg"
+  }
+]

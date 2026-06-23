@@ -1,0 +1,35 @@
+services:
+  notificaciones_db:
+    image: postgres:16-alpine
+    container_name: notif_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: notificaciones_db
+    ports:
+      - "5436:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - notif_postgres_data:/var/lib/postgresql/data
+
+  notificaciones-app:
+    build: .
+    container_name: notificaciones-app
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://notif_db_container:5432/notificaciones_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+    depends_on:
+      - notificaciones_db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  notif_postgres_data:

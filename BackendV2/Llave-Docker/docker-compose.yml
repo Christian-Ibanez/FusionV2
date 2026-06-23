@@ -1,0 +1,291 @@
+version: '3.8'
+
+services:
+  # ==============================
+  # Bases de Datos
+  # ==============================
+  db_usuarios:
+    image: postgres:16-alpine
+    container_name: db_usuarios
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_usuarios
+    ports:
+      - "5433:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - usuarios_postgres_data:/var/lib/postgresql/data
+
+  id_db:
+    image: postgres:16-alpine
+    container_name: id_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: id_db
+    ports:
+      - "5430:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - id_db_data:/var/lib/postgresql/data
+
+  mascota_db:
+    image: postgres:16-alpine
+    container_name: mascota_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: mascota_db
+    ports:
+      - "5431:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - mascota_postgres_data:/var/lib/postgresql/data
+
+  notificaciones_db:
+    image: postgres:16-alpine
+    container_name: notif_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: notificaciones_db
+    ports:
+      - "5436:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - notif_postgres_data:/var/lib/postgresql/data
+
+  db_reportes:
+    image: postgis/postgis:16-3.4
+    container_name: db_reportes
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_reportes
+    ports:
+      - "5432:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - reportes_postgres_data:/var/lib/postgresql/data
+
+  db_coincidencias:
+    image: postgis/postgis:16-3.4
+    container_name: db_coincidencias
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_coincidencias
+    ports:
+      - "5435:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - coincidencias_postgres_data:/var/lib/postgresql/data
+
+  geolocalizacion_db:
+    image: postgis/postgis:16-3.4
+    container_name: geolocalizacion-db
+    environment:
+      POSTGRES_DB: geolocalizacion
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+    ports:
+      - "5434:5432"
+    networks:
+      - fusion-network
+    volumes:
+      - geolocalizacion_db_data:/var/lib/postgresql/data
+
+
+  # ==============================
+  # Microservicios
+  # ==============================
+
+  # BFF Gateway
+  bff-gateway:
+    build:
+      context: ../BFF-Gateway
+      dockerfile: Dockerfile
+    container_name: bff-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_APPLICATION_NAME=bff-gateway
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - fusion-network
+    depends_on:
+      - usuarios
+      - mascotas
+      - geolocalizacion
+      - notificaciones
+      - reportes
+      - coincidencias
+      - identificacion-acceso
+    restart: unless-stopped
+
+  # Usuarios
+  usuarios:
+    build:
+      context: ../Usuarios-main/Usuarios-main
+      dockerfile: Dockerfile
+    container_name: usuarios
+    ports:
+      - "8001:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=usuarios
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_usuarios:5432/db_usuarios
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - AUTH_SERVICE_URL=http://identificacion-acceso:8085
+    networks:
+      - fusion-network
+    depends_on:
+      - db_usuarios
+    restart: unless-stopped
+
+  # Mascotas
+  mascotas:
+    build:
+      context: ../Mascotas/Mascotas
+      dockerfile: Dockerfile
+    container_name: mascotas
+    ports:
+      - "8002:8086"
+    environment:
+      - SPRING_APPLICATION_NAME=mascotas
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://mascota_db_container:5432/mascota_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+    networks:
+      - fusion-network
+    depends_on:
+      - mascota_db
+    restart: unless-stopped
+
+  # Geolocalizacion
+  geolocalizacion:
+    build:
+      context: ../Geolocalizacion/Geolocalizacion
+      dockerfile: Dockerfile
+    container_name: geolocalizacion
+    ports:
+      - "8003:8084"
+    environment:
+      - SPRING_APPLICATION_NAME=geolocalizacion
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://geolocalizacion-db:5432/geolocalizacion
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - fusion-network
+    depends_on:
+      - geolocalizacion_db
+    restart: unless-stopped
+
+  # Notificaciones
+  notificaciones:
+    build:
+      context: ../Notificaciones/Notificaciones
+      dockerfile: Dockerfile
+    container_name: notificaciones
+    ports:
+      - "8004:8083"
+    environment:
+      - SPRING_APPLICATION_NAME=notificaciones
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://notif_db_container:5432/notificaciones_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+    networks:
+      - fusion-network
+    depends_on:
+      - notificaciones_db
+    restart: unless-stopped
+
+  # Reportes
+  reportes:
+    build:
+      context: ../Reportes-main/Reportes-main
+      dockerfile: Dockerfile
+    container_name: reportes
+    ports:
+      - "8005:8081"
+    environment:
+      - SPRING_APPLICATION_NAME=reportes
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_reportes:5432/db_reportes
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - USUARIO_SERVICE_URL=http://usuarios:8080
+      - COINCIDENCIA_SERVICE_URL=http://coincidencias:8082
+    networks:
+      - fusion-network
+    depends_on:
+      - db_reportes
+    restart: unless-stopped
+
+  # Coincidencias
+  coincidencias:
+    build:
+      context: ../Coincidencias-main/Coincidencias-main
+      dockerfile: Dockerfile
+    container_name: coincidencias
+    ports:
+      - "8006:8082"
+    environment:
+      - SPRING_APPLICATION_NAME=coincidencias
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_coincidencias:5432/db_coincidencias
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - NOTIFICACION_SERVICE_URL=http://notificaciones:8083
+      - REPORTES_SERVICE_URL=http://reportes:8081
+    networks:
+      - fusion-network
+    depends_on:
+      - db_coincidencias
+    restart: unless-stopped
+
+  # Identificacion-Acceso
+  identificacion-acceso:
+    build:
+      context: ../IdentificacioAcceso/IdentificacioAcceso/IdentificacioAcceso
+      dockerfile: Dockerfile
+    container_name: identificacion-acceso
+    ports:
+      - "8007:8085"
+    environment:
+      - SPRING_APPLICATION_NAME=identificacion-acceso
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://id_db:5432/id_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - USUARIO_SERVICE_URL=http://usuarios:8080
+    networks:
+      - fusion-network
+    depends_on:
+      - id_db
+    restart: unless-stopped
+
+networks:
+  fusion-network:
+    driver: bridge
+
+volumes:
+  usuarios_postgres_data:
+  id_db_data:
+  mascota_postgres_data:
+  notif_postgres_data:
+  reportes_postgres_data:
+  coincidencias_postgres_data:
+  geolocalizacion_db_data:

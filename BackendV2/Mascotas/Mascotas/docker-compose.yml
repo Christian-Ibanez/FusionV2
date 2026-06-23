@@ -1,0 +1,35 @@
+services:
+  mascota_db:
+    image: postgres:16-alpine
+    container_name: mascota_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: mascota_db
+    ports:
+      - "5431:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - mascota_postgres_data:/var/lib/postgresql/data
+
+  mascotas-app:
+    build: .
+    container_name: mascotas-app
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://mascota_db_container:5432/mascota_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+    depends_on:
+      - mascota_db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  mascota_postgres_data:

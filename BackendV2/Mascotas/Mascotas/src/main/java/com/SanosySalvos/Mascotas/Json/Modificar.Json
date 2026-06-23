@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nombre": "Firulais",
+    "raza": "Labrador",
+    "color": "Dorado Oscuro",
+    "edad": 4,
+    "imagenUrl": "http://ejemplo.com/foto_actualizada.jpg"
+  },
+  {
+    "id": 2,
+    "nombre": "Luna",
+    "raza": "Siberian Husky",
+    "color": "Gris y Blanco",
+    "edad": 3,
+    "imagenUrl": "http://ejemplo.com/luna_nueva.jpg"
+  },
+  {
+    "id": 3,
+    "nombre": "Maximus",
+    "raza": "Pastor Alemán",
+    "color": "Negro y Fuego",
+    "edad": 5,
+    "imagenUrl": "http://ejemplo.com/max.jpg"
+  }
+]

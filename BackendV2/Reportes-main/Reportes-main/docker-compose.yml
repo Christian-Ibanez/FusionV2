@@ -1,0 +1,37 @@
+services:
+  postgres-reportes-db:
+    image: postgis/postgis:16-3.4
+    container_name: db_reportes
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_reportes
+    ports:
+      - "5432:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - reportes_postgres_data:/var/lib/postgresql/data
+
+  reportes-app:
+    build: .
+    container_name: reportes-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_reportes:5432/db_reportes
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - USUARIO_SERVICE_URL=http://usuario-service:8080
+      - COINCIDENCIA_SERVICE_URL=http://coincidencias-service:8082
+    depends_on:
+      - postgres-reportes-db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  reportes_postgres_data:

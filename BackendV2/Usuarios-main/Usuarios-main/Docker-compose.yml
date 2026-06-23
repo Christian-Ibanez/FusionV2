@@ -1,0 +1,36 @@
+services:
+  postgres-usuarios-db:
+    image: postgres:16-alpine
+    container_name: db_usuarios
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+      POSTGRES_DB: db_usuarios
+    ports:
+      - "5433:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - usuarios_postgres_data:/var/lib/postgresql/data
+
+  usuario-app:
+    build: .
+    container_name: usuario-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_usuarios:5432/db_usuarios
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - AUTH_SERVICE_URL=http://identificacion-acceso-app:8085
+    depends_on:
+      - postgres-usuarios-db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  usuarios_postgres_data:

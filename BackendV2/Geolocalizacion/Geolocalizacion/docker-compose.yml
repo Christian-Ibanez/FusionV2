@@ -1,0 +1,36 @@
+services:
+  geolocalizacion_db:
+    image: postgis/postgis:16-3.4
+    container_name: geolocalizacion-db
+    environment:
+      POSTGRES_DB: geolocalizacion
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Conce123
+    ports:
+      - "5434:5432"
+    networks:
+      - sanosysalvos_net
+    volumes:
+      - geolocalizacion_db_data:/var/lib/postgresql/data
+
+  geolocalizacion-app:
+    build: .
+    container_name: geolocalizacion-app
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://geolocalizacion-db:5432/geolocalizacion
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Conce123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - geolocalizacion_db
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true
+
+volumes:
+  geolocalizacion_db_data:

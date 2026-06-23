@@ -1,0 +1,14 @@
+services:
+  bff-gateway:
+    build: .
+    container_name: bff-gateway-service
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - sanosysalvos_net
+
+networks:
+  sanosysalvos_net:
+    external: true

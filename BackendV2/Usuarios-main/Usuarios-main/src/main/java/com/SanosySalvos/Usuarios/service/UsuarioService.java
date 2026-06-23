@@ -1,0 +1,31 @@
+package com.SanosySalvos.Usuarios.service;
+
+import com.SanosySalvos.Usuarios.model.RolUsuario;
+import com.SanosySalvos.Usuarios.model.Usuario;
+import java.util.List;
+
+public interface UsuarioService {
+    
+
+    Usuario registrarUsuario(Usuario nuevoUsuario);
+    
+    Usuario obtenerUsuarioPorCorreo(String correoElectronico);
+    
+    List<Usuario> obtenerTodosLosUsuarios();
+    
+    List<Usuario> obtenerInstitucionesPendientes();
+    
+    Usuario aprobarCuentaInstitucional(Long usuarioId);
+
+    Usuario solicitarCambioRol(Long usuarioId, RolUsuario nuevoRol, String urlDocumento);
+
+    String notificarNuevoUsuario(String correoElectronico);
+
+    Usuario crearPerfilVacio(String correoElectronico, String nombre, String telefono);
+
+    Usuario actualizarPerfil(Long usuarioId, String nombreCompleto, String telefono);
+
+    Usuario actualizarRol(Long usuarioId, RolUsuario nuevoRol);
+
+    void eliminarUsuario(Long usuarioId);
+}

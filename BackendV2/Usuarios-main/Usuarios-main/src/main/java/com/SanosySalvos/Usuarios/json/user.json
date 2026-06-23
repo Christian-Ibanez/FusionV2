@@ -1,0 +1,41 @@
+[{
+  "nombreCompleto": "Juan Pérez",
+  "correoElectronico": "juan.perez@example.com",
+  "contrasena": "Secreta123!",
+  "telefono": "+56912345678",
+  "rol": "CIUDADANO",
+  "cuentaValidada": false,
+  "fechaRegistro": "2026-05-27T15:52:00",
+  "urlDocumentoValidacion": "https://storage.provider.com/docs/valida_juan.pdf"
+},
+{
+  "nombreCompleto": "Diego Torres",
+  "correoElectronico": "diego.torres@mail.com",
+  "contrasena": "DiegoPass987*",
+  "telefono": null,
+  "rol": "CIUDADANO",
+  "cuentaValidada": false,
+  "fechaRegistro": "2026-05-27T16:15:30",
+  "urlDocumentoValidacion": null
+}, 
+{
+  "nombreCompleto": "Sofía Altamirano",
+  "correoElectronico": "sofia.moderadora@empresa.org",
+  "contrasena": "Mod_2026_Fx",
+  "telefono": "+54911554433",
+  "rol": "MODERADOR",
+  "cuentaValidada": false,
+  "fechaRegistro": "2026-05-20T11:24:00",
+  "urlDocumentoValidacion": "https://storage.provider.com/docs/valida_sofia_mod.pdf"
+},
+{
+  "nombreCompleto": "Hans Müller",
+  "correoElectronico": "hans.muller@global.de",
+  "contrasena": "Wunderbar2026$",
+  "telefono": "+491701234567",
+  "rol": "CIUDADANO",
+  "cuentaValidada": true,
+  "fechaRegistro": "2026-03-04T18:45:12",
+  "urlDocumentoValidacion": "https://storage.provider.com/docs/passport_hans.pdf"
+}
+]
