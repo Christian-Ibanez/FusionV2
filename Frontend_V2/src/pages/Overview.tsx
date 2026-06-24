@@ -51,8 +51,10 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
   }, []);
 
   const stats = [
-    { title: 'Reportes Totales', value: statsData.reportesTotales.toString(), icon: <FileText size={24} />, color: 'var(--color-primary)' },
-    { title: 'Usuarios Registrados', value: statsData.usuariosRegistrados.toString(), icon: <Users size={24} />, color: 'var(--color-secondary)', onClick: () => isAdmin && setShowUsers(!showUsers) },
+    ...(isAdmin ? [
+      { title: 'Reportes Totales', value: statsData.reportesTotales.toString(), icon: <FileText size={24} />, color: 'var(--color-primary)' },
+      { title: 'Usuarios Registrados', value: statsData.usuariosRegistrados.toString(), icon: <Users size={24} />, color: 'var(--color-secondary)', onClick: () => setShowUsers(!showUsers) }
+    ] : []),
     { title: 'Alertas Activas', value: statsData.alertasActivas.toString(), icon: <Activity size={24} />, color: 'var(--color-danger)' },
   ];
 
