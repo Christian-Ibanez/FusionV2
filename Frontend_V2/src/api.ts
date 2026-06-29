@@ -77,3 +77,10 @@ export const reportesApi = {
     return res.data;
   }
 };
+
+export const notificacionesApi = {
+  getHistorial: async (correo: string) => {
+    const res = await api.get(`/notificaciones/${correo}`);
+    return res.data;
+  }
+};

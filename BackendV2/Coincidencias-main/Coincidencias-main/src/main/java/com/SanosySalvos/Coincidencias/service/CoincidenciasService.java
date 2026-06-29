@@ -32,7 +32,7 @@ public class CoincidenciasService {
 
         for (ReporteCruzeDTO candidato : reportesCandidatos) {
             
-            // 1. VALIDACIÓN FÍSICA (Lógica de Negocio Principal)
+            // 1. VALIDACIÓN FÍSICA Y SIMILITUD DE IMAGEN (Lógica de Negocio Principal)
             // Verificamos si la raza y el color coinciden ignorando mayúsculas/minúsculas
             boolean coincideRaza = reporteNuevo.getRaza() != null && 
                                    reporteNuevo.getRaza().equalsIgnoreCase(candidato.getRaza());
@@ -40,8 +40,16 @@ public class CoincidenciasService {
             boolean coincideColor = reporteNuevo.getColor() != null && 
                                     reporteNuevo.getColor().equalsIgnoreCase(candidato.getColor());
 
-            // Si NO coinciden físicamente, saltamos a la siguiente mascota en la lista
-            if (!coincideRaza || !coincideColor) {
+            // Similitud de imágenes utilizando ImageComparisonUtil (aHash)
+            double porcentajeSimilitudImagen = com.SanosySalvos.Coincidencias.util.ImageComparisonUtil.compareImages(
+                    reporteNuevo.getUrlImagen(), 
+                    candidato.getUrlImagen()
+            );
+            // Consideramos una coincidencia de imagen si el porcentaje de similitud es alto (e.g. >= 80%)
+            boolean similitudImagen = porcentajeSimilitudImagen >= 80.0;
+
+            // Si NO hay similitud en la imagen, y tampoco coinciden físicamente (raza y color), saltamos a la siguiente mascota
+            if (!similitudImagen && (!coincideRaza || !coincideColor)) {
                 continue; 
             }
 
@@ -54,9 +62,15 @@ public class CoincidenciasService {
             );
 
             if (distanciaKm <= radioBusquedaKm) {
-                double porcentaje = 100.0 - (distanciaKm * 10); 
+                double porcentajeUbicacion = 100.0 - (distanciaKm * 10); 
                 // Asegurarnos de que el porcentaje no baje de 0
-                if (porcentaje < 0) porcentaje = 0.0;
+                if (porcentajeUbicacion < 0) porcentajeUbicacion = 0.0;
+
+                // Promedio simple entre ubicación y similitud de imagen
+                double porcentajeFinal = porcentajeUbicacion;
+                if (reporteNuevo.getUrlImagen() != null && candidato.getUrlImagen() != null) {
+                    porcentajeFinal = (porcentajeUbicacion + porcentajeSimilitudImagen) / 2.0;
+                }
 
                 Coincidencias coincidencia = new Coincidencias();
                 coincidencia.setReportePerdidoId(
@@ -65,7 +79,7 @@ public class CoincidenciasService {
                 coincidencia.setReporteEncontradoId(
                         reporteNuevo.getTipoReporte().equals("ENCONTRADO") ? reporteNuevo.getId() : candidato.getId()
                 );
-                coincidencia.setPorcentajeSimilitud(Math.round(porcentaje * 100.0) / 100.0);
+                coincidencia.setPorcentajeSimilitud(Math.round(porcentajeFinal * 100.0) / 100.0);
                 coincidencia.setEstado(EstadoCoincidencia.PENDIENTE);
 
                 // Guardar en la base de datos
@@ -75,7 +89,11 @@ public class CoincidenciasService {
                 NotificacionRequestDTO requestDTO = new NotificacionRequestDTO();
                 requestDTO.setIdMascotaPerdida(coincidencia.getReportePerdidoId());
                 requestDTO.setIdMascotaEncontrada(coincidencia.getReporteEncontradoId());
-                requestDTO.setCorreoDueno(reporteNuevo.getCorreoUsuario()); 
+                
+                String correoNotificacion = reporteNuevo.getTipoReporte().equals("PERDIDO") 
+                        ? reporteNuevo.getCorreoUsuario() 
+                        : candidato.getCorreoUsuario();
+                requestDTO.setCorreoDueno(correoNotificacion); 
                 
                 notificacionClient.enviarNotificacion(requestDTO);
 

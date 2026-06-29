@@ -15,4 +15,5 @@ public class ReporteCruzeDTO {
     private String raza;
     private String color;
     private String tamano;
+    private String urlImagen;
 }

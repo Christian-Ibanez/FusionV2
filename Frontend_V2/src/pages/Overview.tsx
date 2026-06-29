@@ -1,16 +1,17 @@
-import { Users, FileText, Activity } from 'lucide-react';
+import { Users, FileText, Activity, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
-import { userApi, reportesApi, type User } from '../api';
+import { userApi, reportesApi, notificacionesApi, type User } from '../api';
 
 export const Overview = ({ menuItems }: { menuItems: any[] }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, addNotification } = useAuth();
   const isAdmin = user?.rol === 'ADMINISTRADOR';
 
   const [showUsers, setShowUsers] = useState(false);
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [coincidenciasList, setCoincidenciasList] = useState<any[]>([]);
   const [statsData, setStatsData] = useState({
     reportesTotales: 0,
     usuariosRegistrados: 0,
@@ -41,6 +42,25 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           usuariosRegistrados: users.length,
           alertasActivas: alertasMascotaPerdida.length + localAlertasMascotaPerdida.length,
         });
+
+        if (user?.id) {
+          const historial = await notificacionesApi.getHistorial(String(user.id));
+          const posiblesCoincidencias = historial.filter((n: any) => n.titulo?.toLowerCase().includes("coincidencia"));
+          setCoincidenciasList(posiblesCoincidencias);
+
+          const savedNotifs = JSON.parse(localStorage.getItem('app_notifications') || '[]');
+          
+          posiblesCoincidencias.forEach((pc: any) => {
+            const yaExiste = savedNotifs.some((n: any) => n.text === pc.mensaje && n.userId === user.id);
+            if (!yaExiste) {
+              addNotification({
+                userId: user.id,
+                text: pc.mensaje,
+                type: 'warning'
+              });
+            }
+          });
+        }
       } catch (error) {
         console.error("Error fetching overview data", error);
       }
@@ -122,6 +142,28 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Posibles Coincidencias */}
+      {!isAdmin && (
+        <div className="surface animate-fade-in" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '4px solid var(--color-warning)' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={20} /> Posibles Coincidencias
+          </h3>
+          {coincidenciasList.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {coincidenciasList.map((c, idx) => (
+                <div key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>{c.titulo}</h4>
+                  <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{c.mensaje}</p>
+                  <small style={{ color: 'var(--color-primary)', display: 'block', marginTop: '0.5rem' }}>{c.fechaCreacion ? new Date(c.fechaCreacion).toLocaleString() : 'Reciente'}</small>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>No tienes posibles coincidencias por el momento. Te notificaremos si encontramos algo.</p>
+          )}
         </div>
       )}
 

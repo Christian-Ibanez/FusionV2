@@ -158,17 +158,20 @@ public class UsuarioControllerTest {
     void crearPerfilInicial_CreaPerfilYRetornaStatusCreated() throws Exception {
         // 1. PREPARACIÓN (Arrange)
         String correoMock = "nuevo@test.com";
+        String nombreMock = "Test";
+        String telefonoMock = "123456789";
         
         Usuario perfilGenerado = new Usuario();
         perfilGenerado.setCorreoElectronico(correoMock);
         
         // Simulamos la respuesta del servicio
-        when(usuarioService.crearPerfilVacio(correoMock)).thenReturn(perfilGenerado);
+        when(usuarioService.crearPerfilVacio(correoMock, nombreMock, telefonoMock)).thenReturn(perfilGenerado);
 
         // 2. EJECUCIÓN Y VERIFICACIÓN (Act & Assert)
+        String jsonContent = "{\"correo\":\"" + correoMock + "\", \"nombre\":\"" + nombreMock + "\", \"telefono\":\"" + telefonoMock + "\"}";
         mockMvc.perform(post("/api/usuarios/interno/crear-perfil")
-                .contentType(org.springframework.http.MediaType.TEXT_PLAIN) // ¡Clave para @RequestBody String!
-                .content(correoMock))
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON) // ¡Clave para @RequestBody Map!
+                .content(jsonContent))
                 
                 // Verificamos el HTTP 201
                 .andExpect(status().isCreated())
@@ -177,7 +180,7 @@ public class UsuarioControllerTest {
                 .andExpect(jsonPath("$.correoElectronico").value(correoMock));
                 
         // 3. Verificamos que el servicio fue llamado
-        verify(usuarioService, times(1)).crearPerfilVacio(correoMock);
+        verify(usuarioService, times(1)).crearPerfilVacio(correoMock, nombreMock, telefonoMock);
     }
     
 }

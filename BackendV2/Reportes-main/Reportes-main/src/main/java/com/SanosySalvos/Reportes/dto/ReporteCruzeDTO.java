@@ -8,4 +8,6 @@ public class ReporteCruzeDTO {
     private String tipoReporte;
     private Double latitud;
     private Double longitud;
+    private String urlImagen;
+    private String correoUsuario;
 }

@@ -225,7 +225,7 @@ public class UsuarioServiceTest {
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioGuardado);
 
         // Act
-        Usuario resultado = usuarioService.crearPerfilVacio(correo);
+        Usuario resultado = usuarioService.crearPerfilVacio(correo, "Nombre Test", "123456789");
 
         // Assert
         assertNotNull(resultado);
@@ -244,7 +244,7 @@ public class UsuarioServiceTest {
         // Act & Assert
         org.springframework.web.server.ResponseStatusException exception = assertThrows(
                 org.springframework.web.server.ResponseStatusException.class, 
-                () -> usuarioService.crearPerfilVacio(correo)
+                () -> usuarioService.crearPerfilVacio(correo, "Nombre Test", "123456789")
         );
 
         assertEquals(org.springframework.http.HttpStatus.CONFLICT, exception.getStatusCode());

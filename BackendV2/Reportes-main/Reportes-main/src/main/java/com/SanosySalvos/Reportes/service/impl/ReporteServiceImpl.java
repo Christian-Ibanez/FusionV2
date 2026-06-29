@@ -67,6 +67,8 @@ public class ReporteServiceImpl implements ReporteService {
         nuevoDTO.setTipoReporte(reporteGuardado.getTipoReporte().name());
         nuevoDTO.setLatitud(reporteGuardado.getLatitud());
         nuevoDTO.setLongitud(reporteGuardado.getLongitud());
+        nuevoDTO.setUrlImagen(reporteGuardado.getUrlImagen());
+        nuevoDTO.setCorreoUsuario(String.valueOf(reporteGuardado.getUsuarioId()));
 
         TipoReporte tipoBuscado = reporteGuardado.getTipoReporte() == TipoReporte.PERDIDO ? TipoReporte.ENCONTRADO : TipoReporte.PERDIDO;
     
@@ -76,6 +78,8 @@ public class ReporteServiceImpl implements ReporteService {
             dto.setTipoReporte(rep.getTipoReporte().name());
             dto.setLatitud(rep.getLatitud());
             dto.setLongitud(rep.getLongitud());
+            dto.setUrlImagen(rep.getUrlImagen());
+            dto.setCorreoUsuario(String.valueOf(rep.getUsuarioId()));
             return dto;
         }).toList();
 
