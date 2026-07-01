@@ -41,8 +41,8 @@ export const Alertas = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Filtrar los reportes según el filtro seleccionado (Perdido/Encontrado/Todos)
   const alertasParaMostrar = alertas.filter((repo) => {
+    if (repo.estado && repo.estado.toLowerCase() === 'resuelto') return false;
     if (filtro !== 'Todos' && repo.tipo !== filtro) return false;
     return true;
   });

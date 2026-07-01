@@ -231,8 +231,31 @@ export const Reportes = () => {
         addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
       }
     } else if (action === 'resolve') {
-      setReportesDummy(reportesDummy.map(r => r.id === id ? { ...r, estado: 'Resuelto' } : r));
-      addNotification({ text: 'Reporte marcado como resuelto. ¡Felicidades!', type: 'success' });
+      const matchIdStr = prompt('¡Qué buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte (déjalo vacío si no aplica):');
+      
+      const resolverReporte = async () => {
+        try {
+          const matchId = matchIdStr ? parseInt(matchIdStr) : undefined;
+          
+          if (user?.id) {
+            await reportesApi.resolver(id, user.id, matchId);
+          }
+          
+          setReportesDummy(reportesDummy.map(r => {
+            if (r.id === id || (matchId && r.id === matchId)) {
+              return { ...r, estado: 'Resuelto' };
+            }
+            return r;
+          }));
+          
+          addNotification({ text: 'Reporte marcado como resuelto. ¡Felicidades!', type: 'success' });
+        } catch (e) {
+          console.error("Error al resolver:", e);
+          addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
+        }
+      };
+      
+      resolverReporte();
     } else if (action === 'edit') {
       const reportToEdit = reportesDummy.find(r => r.id === id);
       if (reportToEdit) {

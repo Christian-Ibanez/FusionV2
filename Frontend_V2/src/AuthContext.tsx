@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addNotification = (notif: Omit<AppNotification, 'id' | 'date'>) => {
     const newNotif = {
       ...notif,
+      userId: notif.userId || user?.id,
       id: Date.now() + Math.random(),
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };

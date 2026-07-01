@@ -73,7 +73,18 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
         const localActivos = localReportes.filter((r: any) => r.estado === 'Activo');
         const localAlertasMascotaPerdida = localActivos.filter((r: any) => r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida');
 
-        const combinedActivos = [...activos, ...localActivos];
+        const combinedActivosRaw = [...activos, ...localActivos];
+        // Deduplicar por ID (los locales y los del backend pueden solaparse)
+        const combinedActivosMap = new Map();
+        combinedActivosRaw.forEach((r: any) => {
+          if (r.id) {
+            combinedActivosMap.set(r.id, r);
+          } else {
+            combinedActivosMap.set(Math.random(), r);
+          }
+        });
+        const combinedActivos = Array.from(combinedActivosMap.values());
+        
         // Sort by ID or date descending
         combinedActivos.sort((a, b) => (b.id || 0) - (a.id || 0));
         setAlertasList(combinedActivos);
@@ -112,10 +123,14 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           rReunidos = myResolved.length;
         }
 
+        const alertasMascotaPerdidaUnicas = combinedActivos.filter((r: any) => 
+          r.tipoReporte === 'PERDIDO' || r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida'
+        );
+
         setStatsData({
-          reportesTotales: reportes.length + localReportes.length,
+          reportesTotales: reportes.length, // Considerar deduplicar esto en el futuro si es necesario
           usuariosRegistrados: users.length,
-          alertasActivas: alertasMascotaPerdida.length + localAlertasMascotaPerdida.length,
+          alertasActivas: alertasMascotaPerdidaUnicas.length,
           refugioPerros: rPerros,
           refugioGatos: rGatos,
           refugioReunidos: rReunidos
@@ -132,7 +147,17 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           for (const reporte of misReportesPerdidos) {
             try {
               const matches = await coincidenciasApi.getByReporte(reporte.id);
-              coincidenciasDetalladas = [...coincidenciasDetalladas, ...matches.map((m: any) => {
+              const validMatches = matches.filter((m: any) => {
+                if (m.estado && m.estado.toUpperCase() === 'RESUELTO') return false;
+                const matchId = m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId;
+                const matchReporte = [...reportes, ...localReportes].find((r: any) => r.id === matchId);
+                if (!matchReporte) return true; // Si no lo encontramos en memoria, lo dejamos por defecto
+                if (matchReporte.estado && matchReporte.estado.toUpperCase() === 'RESUELTO') return false;
+                if (matchReporte.estado && matchReporte.estado.toUpperCase() !== 'ACTIVO') return false;
+                return true;
+              });
+              
+              coincidenciasDetalladas = [...coincidenciasDetalladas, ...validMatches.map((m: any) => {
                 const matchId = m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId;
                 const matchReporte = [...reportes, ...localReportes].find((r: any) => r.id === matchId);
                 return {

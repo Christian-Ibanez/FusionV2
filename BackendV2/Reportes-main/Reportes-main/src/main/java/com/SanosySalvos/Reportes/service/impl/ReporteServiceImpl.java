@@ -87,7 +87,7 @@ public class ReporteServiceImpl implements ReporteService {
         List<Reporte> candidatosEntity;
         if (reporteGuardado.getVectorImagen() != null && !reporteGuardado.getVectorImagen().trim().isEmpty()) {
             // ¡MAGIA IA (pgvector)! Buscamos los 3 vectores matemáticamente más cercanos
-            candidatosEntity = reporteRepository.buscarCoincidenciasPorImagen(tipoBuscado.name(), reporteGuardado.getVectorImagen(), 3);
+            candidatosEntity = reporteRepository.buscarCoincidenciasCruzadas(tipoBuscado.name(), reporteGuardado.getVectorImagen(), 3);
         } else {
             // Fallback (Sin IA): Traer todos
             candidatosEntity = reporteRepository.findByTipoReporte(tipoBuscado);
@@ -131,7 +131,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
-    public ReporteResponseDTO marcarComoResuelto(Long reporteId, Long usuarioId) {
+    public ReporteResponseDTO marcarComoResuelto(Long reporteId, Long usuarioId, Long idReporteMatch) {
         Reporte reporte = reporteRepository.findById(reporteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El reporte no existe."));
 
@@ -141,6 +141,13 @@ public class ReporteServiceImpl implements ReporteService {
 
         reporte.setEstado(EstadoReporte.RESUELTO);
         Reporte reporteActualizado = reporteRepository.save(reporte);
+
+        if (idReporteMatch != null) {
+            reporteRepository.findById(idReporteMatch).ifPresent(reporteMatch -> {
+                reporteMatch.setEstado(EstadoReporte.RESUELTO);
+                reporteRepository.save(reporteMatch);
+            });
+        }
 
         return mapearAResponseDTO(reporteActualizado);
     }

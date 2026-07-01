@@ -39,13 +39,8 @@ export const Dashboard = () => {
 
   const notifications = allNotifications.filter(n => {
     if (n.read) return false;
-    if (isAdmin) {
-      return !n.userId || n.userId === user?.id;
-    } else {
-      if (n.userId === user?.id) return true;
-      if (!n.userId && n.type !== 'role_request') return true;
-      return false;
-    }
+    if (isAdmin && n.type === 'role_request') return true;
+    return n.userId === user?.id;
   });
 
   const closeAndClearNotifications = () => {

@@ -79,6 +79,12 @@ export const reportesApi = {
   crear: async (data: any) => {
     const res = await api.post('/reportes/crearReporte', data);
     return res.data;
+  },
+  resolver: async (id: number, usuarioId: number, idReporteMatch?: number) => {
+    const params: any = { usuarioId };
+    if (idReporteMatch) params.idReporteMatch = idReporteMatch;
+    const res = await api.put(`/reportes/${id}/resolver`, null, { params });
+    return res.data;
   }
 };
 

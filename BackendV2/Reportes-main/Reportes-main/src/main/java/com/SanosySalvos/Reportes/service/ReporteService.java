@@ -10,7 +10,7 @@ public interface ReporteService {
     
     List<ReporteResponseDTO> obtenerReportesActivos();
 
-    ReporteResponseDTO marcarComoResuelto(Long reporteId, Long usuarioId);
+    ReporteResponseDTO marcarComoResuelto(Long reporteId, Long usuarioId, Long idReporteMatch);
 
     List<ReporteResponseDTO> obtenerTodosLosReportes();
 }

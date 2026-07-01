@@ -32,9 +32,10 @@ public class ReporteController {
     @PutMapping("/{id}/resolver")
     public ResponseEntity<ReporteResponseDTO> marcarComoResuelto(
             @PathVariable("id") Long reporteId,
-            @RequestParam("usuarioId") Long usuarioId) {
+            @RequestParam("usuarioId") Long usuarioId,
+            @RequestParam(value = "idReporteMatch", required = false) Long idReporteMatch) {
         
-        ReporteResponseDTO reporteActualizado = reporteService.marcarComoResuelto(reporteId, usuarioId);
+        ReporteResponseDTO reporteActualizado = reporteService.marcarComoResuelto(reporteId, usuarioId, idReporteMatch);
         return ResponseEntity.ok(reporteActualizado);
     }
 
