@@ -11,6 +11,8 @@ public interface UsuarioService {
     
     Usuario obtenerUsuarioPorCorreo(String correoElectronico);
     
+    Usuario obtenerUsuarioPorId(Long usuarioId);
+    
     List<Usuario> obtenerTodosLosUsuarios();
     
     List<Usuario> obtenerInstitucionesPendientes();

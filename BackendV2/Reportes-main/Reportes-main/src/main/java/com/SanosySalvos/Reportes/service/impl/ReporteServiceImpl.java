@@ -68,7 +68,9 @@ public class ReporteServiceImpl implements ReporteService {
         nuevoDTO.setLatitud(reporteGuardado.getLatitud());
         nuevoDTO.setLongitud(reporteGuardado.getLongitud());
         nuevoDTO.setUrlImagen(reporteGuardado.getUrlImagen());
-        nuevoDTO.setCorreoUsuario(String.valueOf(reporteGuardado.getUsuarioId()));
+        
+        String correoNuevo = usuarioClient.obtenerCorreoUsuario(reporteGuardado.getUsuarioId());
+        nuevoDTO.setCorreoUsuario(correoNuevo);
 
         TipoReporte tipoBuscado = reporteGuardado.getTipoReporte() == TipoReporte.PERDIDO ? TipoReporte.ENCONTRADO : TipoReporte.PERDIDO;
     
@@ -79,7 +81,8 @@ public class ReporteServiceImpl implements ReporteService {
             dto.setLatitud(rep.getLatitud());
             dto.setLongitud(rep.getLongitud());
             dto.setUrlImagen(rep.getUrlImagen());
-            dto.setCorreoUsuario(String.valueOf(rep.getUsuarioId()));
+            String correoCand = usuarioClient.obtenerCorreoUsuario(rep.getUsuarioId());
+            dto.setCorreoUsuario(correoCand);
             return dto;
         }).toList();
 

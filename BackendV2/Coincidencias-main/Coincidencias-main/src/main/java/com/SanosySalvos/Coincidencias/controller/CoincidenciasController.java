@@ -25,4 +25,10 @@ public class CoincidenciasController {
         Coincidencias coincidenciaDescartada = coincidenciasService.descartarCoincidencia(id);
         return ResponseEntity.ok(coincidenciaDescartada);
     }
+
+    @GetMapping("/reporte/{reporteId}")
+    public ResponseEntity<java.util.List<Coincidencias>> obtenerPorReporte(@PathVariable("reporteId") Long reporteId) {
+        java.util.List<Coincidencias> coincidencias = coincidenciasService.obtenerPorReporte(reporteId);
+        return ResponseEntity.ok(coincidencias);
+    }
 }

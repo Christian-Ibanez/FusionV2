@@ -85,7 +85,7 @@ export const Dashboard = () => {
 
   const userMenu = [
     { title: 'Mi Panel', path: '', icon: <LayoutDashboard size={20} /> },
-    { title: 'Mis Reportes', path: 'reportes', icon: <FileText size={20} /> },
+    { title: 'Reportes', path: 'reportes', icon: <FileText size={20} /> },
     { title: 'Alertas Locales', path: 'alertas', icon: <AlertTriangle size={20} /> },
     { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
   ];

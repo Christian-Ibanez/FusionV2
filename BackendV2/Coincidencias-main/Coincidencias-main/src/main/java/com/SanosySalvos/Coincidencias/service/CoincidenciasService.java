@@ -113,6 +113,10 @@ public class CoincidenciasService {
         return coincidenciasRepository.save(coincidencia);
     }
 
+    public List<Coincidencias> obtenerPorReporte(Long reporteId) {
+        return coincidenciasRepository.findByReportePerdidoId(reporteId);
+    }
+
     private double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2) {
         final int RADIO_TIERRA_KM = 6371;
         double latDistance = Math.toRadians(lat2 - lat1);

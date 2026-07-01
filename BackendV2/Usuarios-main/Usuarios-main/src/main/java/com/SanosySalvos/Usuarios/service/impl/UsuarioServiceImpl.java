@@ -109,6 +109,12 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public Usuario obtenerUsuarioPorId(Long usuarioId) {
+        return usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado con ID: " + usuarioId));
+    }
+
+    @Override
     public List<Usuario> obtenerTodosLosUsuarios() {
         return usuarioRepository.findAll();
     }

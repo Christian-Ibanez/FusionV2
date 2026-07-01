@@ -22,4 +22,19 @@ public class UsuarioClient {
         System.out.println("⚠️ ALERTA CORTACIRCUITOS: No se pudo validar el usuario " + usuarioId + ". El microservicio está caído. Motivo: " + e.getMessage());
         return true; 
     }
+
+    @CircuitBreaker(name = "servicioUsuarios", fallbackMethod = "obtenerCorreoUsuarioFallback")
+    public String obtenerCorreoUsuario(Long usuarioId) {
+        String url = "http://localhost:8080/api/usuarios/" + usuarioId;
+        java.util.Map<String, Object> respuesta = restTemplate.getForObject(url, java.util.Map.class);
+        if (respuesta != null && respuesta.containsKey("correoElectronico")) {
+            return (String) respuesta.get("correoElectronico");
+        }
+        return String.valueOf(usuarioId);
+    }
+
+    public String obtenerCorreoUsuarioFallback(Long usuarioId, Throwable e) {
+        System.out.println("⚠️ ALERTA CORTACIRCUITOS: No se pudo obtener correo del usuario " + usuarioId + ". Motivo: " + e.getMessage());
+        return String.valueOf(usuarioId);
+    }
 }

@@ -84,3 +84,10 @@ export const notificacionesApi = {
     return res.data;
   }
 };
+
+export const coincidenciasApi = {
+  getByReporte: async (reporteId: number) => {
+    const res = await api.get(`/coincidencias/reporte/${reporteId}`);
+    return res.data;
+  }
+};

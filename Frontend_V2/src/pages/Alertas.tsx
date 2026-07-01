@@ -112,7 +112,7 @@ export const Alertas = () => {
               {/* Contenedor de la Información Detallada */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem', color: '#fff' }}>{alerta.titulo}</h2>
+                  <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem', color: '#fff' }}>{alerta.titulo} <span style={{ color: 'var(--color-primary)', fontSize: '1.2rem', fontWeight: 'normal' }}>#{alerta.id}</span></h2>
                   <span style={{ padding: '0.3rem 0.8rem', borderRadius: 'var(--radius-full)', background: getBadgeBg(alerta.tipo), color: getBorderColor(alerta.tipo), fontWeight: 'bold', fontSize: '0.9rem' }}>
                     {alerta.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'}
                   </span>
@@ -127,7 +127,11 @@ export const Alertas = () => {
                   )}
                   <div>
                     <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Especie</p>
-                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.animal || 'No especificada'}</p>
+                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.animal || alerta.especie || 'No especificada'}</p>
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Raza</p>
+                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.raza || 'No especificada'}</p>
                   </div>
                   <div>
                     <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Color</p>
