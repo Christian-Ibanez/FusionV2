@@ -40,9 +40,14 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
     reportesTotales: 0,
     usuariosRegistrados: 0,
     alertasActivas: 0,
+    refugioPerros: 0,
+    refugioGatos: 0,
+    refugioReunidos: 0,
   });
   const [mapLoaded, setMapLoaded] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(true);
+  const [acceptingIncomes, setAcceptingIncomes] = useState(true);
+  const isRefugio = user?.rol === 'REFUGIO';
 
   useEffect(() => {
     const timer = setTimeout(() => setMapLoaded(true), 2000);
@@ -89,10 +94,30 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           setAuditLog([...recentUsers, ...recentAlerts].slice(0, 5));
         }
 
+        let rPerros = 0, rGatos = 0, rReunidos = 0;
+        if (user?.rol === 'REFUGIO' && user?.id) {
+          const myReports = [...reportes, ...localReportes].filter(
+            (r: any) => String(r.usuarioId) === String(user.id)
+          );
+          
+          const myActive = myReports.filter((r: any) => r.estado === 'Activo');
+          myActive.forEach(r => {
+             const especie = (r.animal || r.especie || '').toLowerCase();
+             if (especie.includes('gato') || especie.includes('felino')) rGatos++;
+             else rPerros++; // Si no especifica gato, asumimos perro
+          });
+          
+          const myResolved = myReports.filter((r: any) => r.estado === 'Resuelto' || r.estado === 'Inactivo');
+          rReunidos = myResolved.length;
+        }
+
         setStatsData({
           reportesTotales: reportes.length + localReportes.length,
           usuariosRegistrados: users.length,
           alertasActivas: alertasMascotaPerdida.length + localAlertasMascotaPerdida.length,
+          refugioPerros: rPerros,
+          refugioGatos: rGatos,
+          refugioReunidos: rReunidos
         });
 
         if (user?.id) {
@@ -177,9 +202,27 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
 
   return (
     <div className="animate-fade-in">
-      <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem' }}>Bienvenido, {user?.nombreCompleto?.split(' ')[0] || 'Usuario'}</h1>
-        <p>Este es tu panel principal. Aquí tienes un resumen del sistema.</p>
+      <div style={{ marginTop: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            Bienvenido, {user?.nombreCompleto?.split(' ')[0] || 'Usuario'}
+            {isRefugio && (
+              <div 
+                onClick={() => setAcceptingIncomes(!acceptingIncomes)}
+                style={{ 
+                  fontSize: '0.9rem', padding: '0.3rem 0.8rem', borderRadius: '20px', 
+                  background: acceptingIncomes ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                  color: acceptingIncomes ? 'var(--color-success)' : 'var(--color-danger)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', border: `1px solid ${acceptingIncomes ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                }}
+              >
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: acceptingIncomes ? 'var(--color-success)' : 'var(--color-danger)' }}></div>
+                {acceptingIncomes ? 'Aceptando ingresos' : 'Capacidad Máxima'}
+              </div>
+            )}
+          </h1>
+          <p style={{ margin: '0.5rem 0 0 0' }}>Este es tu panel principal. Aquí tienes un resumen del sistema.</p>
+        </div>
       </div>
 
       {/* Stats row for Admin only */}
@@ -327,7 +370,28 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
             
-            {/* Alertas Activas & Recientes (Left Column) */}
+            {/* Left Column (Alertas Activas OR Refugio Stats) */}
+            {isRefugio ? (
+              <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: '4px solid var(--color-warning)', height: '100%' }}>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text)', marginBottom: '1.5rem' }}>
+                  <Shield size={20} color="var(--color-warning)" /> Resumen del Refugio
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flex: 1 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '2.5rem', margin: 0, color: '#fff' }}>{statsData.refugioPerros}</h2>
+                    <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Perros en custodia</p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '2.5rem', margin: 0, color: '#fff' }}>{statsData.refugioGatos}</h2>
+                    <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Gatos en custodia</p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', gridColumn: 'span 2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <p style={{ margin: 0, color: '#fff', fontSize: '1.1rem' }}>Reunidos con su dueño este mes:</p>
+                    <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-success)' }}>{statsData.refugioReunidos}</h2>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: '4px solid var(--color-danger)', height: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text)' }}>
@@ -378,12 +442,13 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
                 Ver todas las alertas
               </button>
             </div>
+            )}
 
             {/* Posibles Coincidencias OR Mascotas en Custodia (Right Column) */}
-            <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: isVet ? '4px solid var(--color-success)' : '4px solid var(--color-warning)', height: '100%' }}>
+            <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: isVet ? '4px solid var(--color-success)' : (isRefugio ? '4px solid var(--color-warning)' : '4px solid var(--color-warning)'), height: '100%' }}>
               <h3 style={{ margin: '0 0 1.5rem 0', color: isVet ? 'var(--color-success)' : 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 {isVet ? <Shield size={20} /> : <AlertCircle size={20} />} 
-                {isVet ? 'Mascotas en Custodia' : 'Posibles Coincidencias'}
+                {isVet ? 'Mascotas en Custodia' : (isRefugio ? 'Posibles Coincidencias / Nuestros Casos' : 'Posibles Coincidencias')}
               </h3>
               
               {isVet ? (
@@ -415,13 +480,13 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '2rem 0', color: 'var(--color-text-muted)' }}>
                   <AlertCircle size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                  <p style={{ margin: 0, textAlign: 'center', marginBottom: '1.5rem' }}>No tienes posibles coincidencias por el momento. Te notificaremos si encontramos algo.</p>
+                  <p style={{ margin: 0, textAlign: 'center', marginBottom: '1.5rem' }}>No tienes {isRefugio ? 'casos activos' : 'posibles coincidencias'} por el momento. Te notificaremos si encontramos algo.</p>
                   <button 
                     onClick={() => navigate('/dashboard/reportes')} 
                     className="btn btn-primary"
                     style={{ fontSize: '0.9rem', padding: '0.6rem 1.2rem' }}
                   >
-                    Crear nuevo reporte
+                    {isRefugio ? 'Registrar Ingreso' : 'Crear nuevo reporte'}
                   </button>
                 </div>
               )}

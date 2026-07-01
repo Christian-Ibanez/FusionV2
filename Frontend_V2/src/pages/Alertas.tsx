@@ -203,15 +203,28 @@ export const Alertas = () => {
                       Este es tu reporte
                     </button>
                   ) : (
-                    <button className="btn" style={{ 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
-                      padding: '1rem', width: '100%', borderRadius: '8px', 
-                      background: 'var(--color-primary)', color: '#fff', fontWeight: 'bold', border: 'none', cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', transition: 'all 0.2s'
-                    }}>
-                      <MessageCircle size={20} />
-                      Chat / Contactar
-                    </button>
+                    <>
+                      {user?.rol === 'REFUGIO' && alerta.tipo === 'Encontrado' && (
+                        <button className="btn" style={{ 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                          padding: '1rem', width: '100%', borderRadius: '8px', 
+                          background: 'var(--color-success)', color: '#fff', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s', textAlign: 'center', lineHeight: 1.2
+                        }}
+                        onClick={() => alert(`Mensaje enviado a la comunidad: "Somos el refugio ${user?.nombreCompleto || 'asociado'}, tenemos espacio, tráelo."`)}>
+                          Me ofrezco como hogar temporal
+                        </button>
+                      )}
+                      <button className="btn" style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                        padding: '1rem', width: '100%', borderRadius: '8px', 
+                        background: 'var(--color-primary)', color: '#fff', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', transition: 'all 0.2s'
+                      }}>
+                        <MessageCircle size={20} />
+                        Chat / Contactar
+                      </button>
+                    </>
                   )}
                   <button className="btn" style={{ 
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 

@@ -28,6 +28,7 @@ export const Dashboard = () => {
     switch (rol) {
       case 'ADMINISTRADOR': return 'var(--color-danger)';
       case 'VETERINARIA': return 'var(--color-success)';
+      case 'REFUGIO': return 'var(--color-warning)';
       default: return 'var(--color-primary)';
     }
   };
@@ -105,7 +106,15 @@ export const Dashboard = () => {
     { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
   ];
 
-  const sidebarMenu = isAdmin ? adminMenu : (user?.rol === 'VETERINARIA' ? vetMenu : userMenu);
+  const refugioMenu = [
+    { title: 'Mi Panel', path: '', icon: <LayoutDashboard size={20} /> },
+    { title: 'Animales en Custodia', path: 'reportes', icon: <FileText size={20} /> },
+    { title: 'Alertas Locales', path: 'alertas', icon: <AlertTriangle size={20} /> },
+    { title: 'Notificaciones', path: 'notificaciones', icon: <Bell size={20} /> },
+    { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
+  ];
+
+  const sidebarMenu = isAdmin ? adminMenu : (user?.rol === 'VETERINARIA' ? vetMenu : (user?.rol === 'REFUGIO' ? refugioMenu : userMenu));
 
   return (
     <div className="app-layout">

@@ -27,8 +27,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('app_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('app_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('app_user');
+    }
+  }, [user]);
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     try {
