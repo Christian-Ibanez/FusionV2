@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface CoincidenciasRepository extends JpaRepository<Coincidencias, Long> {
     // Para cuando el usuario quiera ver sus posibles coincidencias
-    List<Coincidencias> findByReportePerdidoId(Long reportePerdidoId);
+    List<Coincidencias> findByReportePerdidoIdOrReporteEncontradoId(Long reportePerdidoId, Long reporteEncontradoId);
 }

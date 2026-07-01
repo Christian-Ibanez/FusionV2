@@ -121,9 +121,8 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
         });
 
         if (user?.id) {
-          // Get user's lost pet reports
+          // Get user's active reports (both lost and found)
           const misReportesPerdidos = activos.filter((r: any) => 
-            (r.tipoReporte === 'PERDIDO' || r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida') && 
             String(r.usuarioId) === String(user.id)
           );
 
@@ -135,8 +134,10 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
               coincidenciasDetalladas = [...coincidenciasDetalladas, ...matches.map((m: any) => ({
                 ...m,
                 titulo: `¡Coincidencia del ${m.porcentajeSimilitud}%!`,
-                mensaje: `Se encontró un posible match para tu reporte (ID: ${m.reportePerdidoId}). El reporte coincidente tiene el ID: ${m.reporteEncontradoId}. Estado: ${m.estado}`,
-                fechaCreacion: m.fechaCalculo
+                mensaje: `Se encontró un posible match para el reporte #${reporte.id}. El reporte coincidente es el #${m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId}. Estado: ${m.estado}`,
+                fechaCreacion: m.fechaCalculo,
+                reporteMio: reporte.id,
+                reporteMatch: m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId
               }))];
             } catch (err) {
               console.error("No se pudieron cargar coincidencias para reporte " + reporte.id);
@@ -470,10 +471,13 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
               ) : coincidenciasList.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
                   {coincidenciasList.map((c, idx) => (
-                    <div key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>{c.titulo}</h4>
-                      <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{c.mensaje}</p>
-                      <small style={{ color: 'var(--color-primary)', display: 'block', marginTop: '0.8rem', fontWeight: 500 }}>{c.fechaCreacion ? new Date(c.fechaCreacion).toLocaleString() : 'Reciente'}</small>
+                    <div key={c.id || idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--color-primary)', display: 'flex', flexDirection: 'column', gap: '0.8rem', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.15)' }}>
+                      <p style={{ margin: 0, color: '#fff', fontSize: '0.95rem', lineHeight: '1.4' }}>
+                        ¡Atención! Alguien reportó una mascota muy parecida a tu caso <strong>#{c.reporteMio || '...'}</strong>.
+                      </p>
+                      <button className="btn btn-primary" style={{ background: 'var(--color-primary)', border: 'none', padding: '0.6rem', fontSize: '0.9rem', width: '100%', display: 'flex', justifyContent: 'center', fontWeight: 'bold' }}>
+                        Ver foto del caso #{c.reporteMatch || '...'}
+                      </button>
                     </div>
                   ))}
                 </div>

@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
-      const savedUser = localStorage.getItem('app_user');
+      const savedUser = sessionStorage.getItem('app_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -39,9 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('app_user', JSON.stringify(user));
+      sessionStorage.setItem('app_user', JSON.stringify(user));
     } else {
-      localStorage.removeItem('app_user');
+      sessionStorage.removeItem('app_user');
     }
   }, [user]);
 

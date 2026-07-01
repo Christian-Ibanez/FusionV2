@@ -3,6 +3,7 @@ import { FileText, MapPin, X, Search, Filter, Eye, Edit, Trash2, Check, List, Us
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../AuthContext';
+import { reportesApi } from '../api';
 
 // Fix for default marker icons in Leaflet with bundlers
 try {
@@ -145,8 +146,9 @@ export const Reportes = () => {
     }
   };
 
-  const handleSaveReport = () => {
+  const handleSaveReport = async () => {
     if (editingReportId) {
+      // Logic for editing (leave as is or mock for now, since no update API is defined)
       const updatedReports = reportesDummy.map(r => {
         if (r.id === editingReportId) {
           return {
@@ -167,37 +169,33 @@ export const Reportes = () => {
         return r;
       });
       setReportesDummy(updatedReports);
-      addNotification({
-        text: `Reporte actualizado correctamente.`,
-        type: 'success'
-      });
+      addNotification({ text: `Reporte actualizado correctamente.`, type: 'success' });
+      resetForm();
     } else {
-      const newReport = {
-        id: Date.now(),
-        lat: nuevoReporte.lat,
-        lng: nuevoReporte.lng,
-        titulo: nuevoReporte.titulo || (nuevoReporte.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'),
-        tipo: nuevoReporte.tipo,
-        estado: 'Activo',
-        userId: user?.id,
-        userRol: user?.rol,
-        nombre: nuevoReporte.nombre,
-        color: nuevoReporte.color,
-        raza: nuevoReporte.raza,
-        edad: nuevoReporte.edad,
-        animal: nuevoReporte.animal,
-        imageName: nuevoReporte.image?.name ?? '',
-        imageBase64: nuevoReporte.imageBase64,
-      };
-      
-      addNotification({
-        text: `Nuevo reporte: ${newReport.titulo}.`,
-        type: 'info'
-      });
-      setReportesDummy([...reportesDummy, newReport]);
+      // CONNECTED TO BACKEND
+      try {
+        const payload = {
+          usuarioId: user?.id,
+          tipoReporte: nuevoReporte.tipo === 'Perdido' ? 'PERDIDO' : 'ENCONTRADO',
+          titulo: nuevoReporte.titulo || (nuevoReporte.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'),
+          descripcion: `Animal: ${nuevoReporte.animal}. Color: ${nuevoReporte.color}. Raza: ${nuevoReporte.raza}.`,
+          estado: 'ACTIVO',
+          latitud: nuevoReporte.lat,
+          longitud: nuevoReporte.lng,
+          urlImagen: nuevoReporte.imageBase64 // Base64 sent to backend
+        };
+        
+        await reportesApi.crear(payload);
+        addNotification({ text: `¡Reporte publicado en el servidor!`, type: 'success' });
+        
+        // Reload page to fetch real data
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        console.error("Error creating report:", err);
+        addNotification({ text: `Error al publicar en el servidor`, type: 'danger' });
+      }
+      resetForm();
     }
-    
-    resetForm();
   };
 
   const handleAction = (id: number, action: string) => {

@@ -61,6 +61,9 @@ public class Reporte {
 
     @Column(columnDefinition = "TEXT")
     private String descripcion; 
+    
+    @Column(name = "vector_imagen", columnDefinition = "vector(512)") // Using 512 as an example dimension
+    private String vectorImagen;
 
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;

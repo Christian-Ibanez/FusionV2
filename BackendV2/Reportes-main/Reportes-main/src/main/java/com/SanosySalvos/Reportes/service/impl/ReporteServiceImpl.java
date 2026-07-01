@@ -12,6 +12,7 @@ import com.SanosySalvos.Reportes.service.CoincidenciaClient;
 import com.SanosySalvos.Reportes.service.ReporteService;
 import com.SanosySalvos.Reportes.service.UsuarioClient;
 import com.SanosySalvos.Reportes.service.NotificacionClient;
+import com.SanosySalvos.Reportes.service.HuggingFaceService;
 import com.SanosySalvos.Reportes.dto.NotificacionRequestDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,9 @@ public class ReporteServiceImpl implements ReporteService {
     @Autowired
     private NotificacionClient notificacionClient;
     
+    @Autowired
+    private HuggingFaceService huggingFaceService;
+    
     @Override
     public ReporteResponseDTO crearReporte(ReporteRequestDTO requestDTO) {
         if (requestDTO.getUsuarioId() == null) {
@@ -59,6 +63,12 @@ public class ReporteServiceImpl implements ReporteService {
         reporte.setLatitud(requestDTO.getLatitud());
         reporte.setLongitud(requestDTO.getLongitud());
         
+        // --- Integración con IA de Hugging Face ---
+        if (requestDTO.getUrlImagen() != null && !requestDTO.getUrlImagen().isEmpty()) {
+            String vector = huggingFaceService.generarVectorDeImagen(requestDTO.getUrlImagen());
+            reporte.setVectorImagen(vector);
+        }
+        
         Reporte reporteGuardado = reporteRepository.save(reporte);
 
         // Usamos reporteGuardado, que es la variable que sí existe en tu código
@@ -74,7 +84,16 @@ public class ReporteServiceImpl implements ReporteService {
 
         TipoReporte tipoBuscado = reporteGuardado.getTipoReporte() == TipoReporte.PERDIDO ? TipoReporte.ENCONTRADO : TipoReporte.PERDIDO;
     
-        List<ReporteCruzeDTO> candidatosDTO = reporteRepository.findByTipoReporte(tipoBuscado).stream().map(rep -> {
+        List<Reporte> candidatosEntity;
+        if (reporteGuardado.getVectorImagen() != null && !reporteGuardado.getVectorImagen().trim().isEmpty()) {
+            // ¡MAGIA IA (pgvector)! Buscamos los 3 vectores matemáticamente más cercanos
+            candidatosEntity = reporteRepository.buscarCoincidenciasPorImagen(tipoBuscado.name(), reporteGuardado.getVectorImagen(), 3);
+        } else {
+            // Fallback (Sin IA): Traer todos
+            candidatosEntity = reporteRepository.findByTipoReporte(tipoBuscado);
+        }
+
+        List<ReporteCruzeDTO> candidatosDTO = candidatosEntity.stream().map(rep -> {
             ReporteCruzeDTO dto = new ReporteCruzeDTO();
             dto.setId(rep.getId());
             dto.setTipoReporte(rep.getTipoReporte().name());

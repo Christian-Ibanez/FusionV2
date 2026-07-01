@@ -23,4 +23,7 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
 
     @Query(value = "SELECT * FROM reportes r WHERE ST_DistanceSphere(r.ubicacion, :puntoOrigen) <= :radioMetros", nativeQuery = true)
     List<Reporte> buscarMascotasCercanas(@Param("puntoOrigen") Point puntoOrigen, @Param("radioMetros") double radioMetros);
+
+    @Query(value = "SELECT * FROM reportes r WHERE r.tipo_reporte = :tipo AND r.vector_imagen IS NOT NULL ORDER BY r.vector_imagen <-> cast(:vector as vector) LIMIT :limite", nativeQuery = true)
+    List<Reporte> buscarCoincidenciasPorImagen(@Param("tipo") String tipo, @Param("vector") String vector, @Param("limite") int limite);
 }

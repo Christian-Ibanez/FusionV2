@@ -10,7 +10,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -33,7 +33,7 @@ export const authApi = {
   login: async (correo: string, contrasena: string) => {
     const res = await api.post<AuthResponse>('/auth/login', { correo, contrasena });
     const token = res.data.token;
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
     
     // Fetch user profile
     const userRes = await api.get<User>(`/usuarios/correo/${correo}`);
@@ -45,7 +45,7 @@ export const authApi = {
   },
   
   logout: () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   }
 };
 
@@ -69,11 +69,15 @@ export const userApi = {
 
 export const reportesApi = {
   getActivos: async () => {
-    const res = await api.get('/reportes/activos');
+    const res = await axios.get('http://localhost:8081/api/reportes/activos');
     return res.data;
   },
   getTodos: async () => {
-    const res = await api.get('/reportes/todos');
+    const res = await axios.get('http://localhost:8081/api/reportes/todos');
+    return res.data;
+  },
+  crear: async (data: any) => {
+    const res = await axios.post('http://localhost:8081/api/reportes/crearReporte', data);
     return res.data;
   }
 };

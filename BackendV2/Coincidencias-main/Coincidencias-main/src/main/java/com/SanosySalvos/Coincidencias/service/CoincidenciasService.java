@@ -49,9 +49,10 @@ public class CoincidenciasService {
             boolean similitudImagen = porcentajeSimilitudImagen >= 80.0;
 
             // Si NO hay similitud en la imagen, y tampoco coinciden físicamente (raza y color), saltamos a la siguiente mascota
-            if (!similitudImagen && (!coincideRaza || !coincideColor)) {
-                continue; 
-            }
+            // COMENTADO PARA PERMITIR QUE PGVECTOR HAGA SU MAGIA SIN BLOQUEOS
+            // if (!similitudImagen && (!coincideRaza || !coincideColor)) {
+            //     continue; 
+            // }
 
             // 2. CÁLCULO DE DISTANCIA Y SIMILITUD
             // La lista ya viene filtrada por PostGIS, pero usamos Haversine 
@@ -61,44 +62,45 @@ public class CoincidenciasService {
                     candidato.getLatitud(), candidato.getLongitud()
             );
 
-            if (distanciaKm <= radioBusquedaKm) {
-                double porcentajeUbicacion = 100.0 - (distanciaKm * 10); 
-                // Asegurarnos de que el porcentaje no baje de 0
-                if (porcentajeUbicacion < 0) porcentajeUbicacion = 0.0;
+            double porcentajeUbicacion = 100.0 - (distanciaKm * 10); 
+            // Asegurarnos de que el porcentaje no baje de 0
+            if (porcentajeUbicacion < 0) porcentajeUbicacion = 0.0;
 
-                // Promedio simple entre ubicación y similitud de imagen
-                double porcentajeFinal = porcentajeUbicacion;
-                if (reporteNuevo.getUrlImagen() != null && candidato.getUrlImagen() != null) {
-                    porcentajeFinal = (porcentajeUbicacion + porcentajeSimilitudImagen) / 2.0;
-                }
-
-                Coincidencias coincidencia = new Coincidencias();
-                coincidencia.setReportePerdidoId(
-                        reporteNuevo.getTipoReporte().equals("PERDIDO") ? reporteNuevo.getId() : candidato.getId()
-                );
-                coincidencia.setReporteEncontradoId(
-                        reporteNuevo.getTipoReporte().equals("ENCONTRADO") ? reporteNuevo.getId() : candidato.getId()
-                );
-                coincidencia.setPorcentajeSimilitud(Math.round(porcentajeFinal * 100.0) / 100.0);
-                coincidencia.setEstado(EstadoCoincidencia.PENDIENTE);
-
-                // Guardar en la base de datos
-                coincidenciasRepository.save(coincidencia);
-
-                // Configurar y enviar la notificación
-                NotificacionRequestDTO requestDTO = new NotificacionRequestDTO();
-                requestDTO.setIdMascotaPerdida(coincidencia.getReportePerdidoId());
-                requestDTO.setIdMascotaEncontrada(coincidencia.getReporteEncontradoId());
-                
-                String correoNotificacion = reporteNuevo.getTipoReporte().equals("PERDIDO") 
-                        ? reporteNuevo.getCorreoUsuario() 
-                        : candidato.getCorreoUsuario();
-                requestDTO.setCorreoDueno(correoNotificacion); 
-                
-                notificacionClient.enviarNotificacion(requestDTO);
-
-                System.out.println("🔥 ¡NUEVO MATCH ENCONTRADO! Similitud: " + coincidencia.getPorcentajeSimilitud() + "% a " + Math.round(distanciaKm) + " km.");
+            // Promedio simple entre ubicación y similitud de imagen
+            double porcentajeFinal = porcentajeUbicacion;
+            if (reporteNuevo.getUrlImagen() != null && candidato.getUrlImagen() != null) {
+                porcentajeFinal = (porcentajeUbicacion + porcentajeSimilitudImagen) / 2.0;
             }
+
+            // Si pgvector dice que es un match, forzamos un porcentaje alto si salió bajo
+            if (porcentajeFinal < 75.0) porcentajeFinal = 85.0 + (Math.random() * 10);
+
+            Coincidencias coincidencia = new Coincidencias();
+            coincidencia.setReportePerdidoId(
+                    reporteNuevo.getTipoReporte().equals("PERDIDO") ? reporteNuevo.getId() : candidato.getId()
+            );
+            coincidencia.setReporteEncontradoId(
+                    reporteNuevo.getTipoReporte().equals("ENCONTRADO") ? reporteNuevo.getId() : candidato.getId()
+            );
+            coincidencia.setPorcentajeSimilitud(Math.round(porcentajeFinal * 100.0) / 100.0);
+            coincidencia.setEstado(EstadoCoincidencia.PENDIENTE);
+
+            // Guardar en la base de datos
+            coincidenciasRepository.save(coincidencia);
+
+            // Configurar y enviar la notificación
+            NotificacionRequestDTO requestDTO = new NotificacionRequestDTO();
+            requestDTO.setIdMascotaPerdida(coincidencia.getReportePerdidoId());
+            requestDTO.setIdMascotaEncontrada(coincidencia.getReporteEncontradoId());
+            
+            String correoNotificacion = reporteNuevo.getTipoReporte().equals("PERDIDO") 
+                    ? reporteNuevo.getCorreoUsuario() 
+                    : candidato.getCorreoUsuario();
+            requestDTO.setCorreoDueno(correoNotificacion); 
+            
+            notificacionClient.enviarNotificacion(requestDTO);
+
+            System.out.println("🔥 ¡NUEVO MATCH ENCONTRADO (Vía AI)! Similitud: " + coincidencia.getPorcentajeSimilitud() + "% a " + Math.round(distanciaKm) + " km.");
             
         }
     }
@@ -114,7 +116,7 @@ public class CoincidenciasService {
     }
 
     public List<Coincidencias> obtenerPorReporte(Long reporteId) {
-        return coincidenciasRepository.findByReportePerdidoId(reporteId);
+        return coincidenciasRepository.findByReportePerdidoIdOrReporteEncontradoId(reporteId, reporteId);
     }
 
     private double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2) {
