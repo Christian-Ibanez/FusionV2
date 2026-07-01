@@ -1,4 +1,4 @@
-import { Users, FileText, Activity, AlertCircle, Clock, MapPin, TrendingUp, TrendingDown, Check, X, Server, BarChart3, List } from 'lucide-react';
+import { Users, FileText, Activity, AlertCircle, Clock, MapPin, TrendingUp, TrendingDown, Check, X, Server, BarChart3, List, Shield, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
@@ -18,11 +18,19 @@ try {
   console.log('Leaflet icon fix skipped');
 }
 
+const VetIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background: var(--color-success); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12h6"></path><path d="M12 9v6"></path></svg></div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
+
 
 export const Overview = ({ menuItems }: { menuItems: any[] }) => {
   const navigate = useNavigate();
   const { user, notifications, removeNotification, addNotification } = useAuth();
   const isAdmin = user?.rol === 'ADMINISTRADOR';
+  const isVet = user?.rol === 'VETERINARIA';
 
   const [usersList, setUsersList] = useState<User[]>([]);
   const [coincidenciasList, setCoincidenciasList] = useState<any[]>([]);
@@ -371,12 +379,30 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
               </button>
             </div>
 
-            {/* Posibles Coincidencias (Right Column) */}
-            <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: '4px solid var(--color-warning)', height: '100%' }}>
-              <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertCircle size={20} /> Posibles Coincidencias
+            {/* Posibles Coincidencias OR Mascotas en Custodia (Right Column) */}
+            <div className="surface animate-fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', borderTop: isVet ? '4px solid var(--color-success)' : '4px solid var(--color-warning)', height: '100%' }}>
+              <h3 style={{ margin: '0 0 1.5rem 0', color: isVet ? 'var(--color-success)' : 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {isVet ? <Shield size={20} /> : <AlertCircle size={20} />} 
+                {isVet ? 'Mascotas en Custodia' : 'Posibles Coincidencias'}
               </h3>
-              {coincidenciasList.length > 0 ? (
+              
+              {isVet ? (
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Búsqueda Rápida de Dueño</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input type="text" className="form-input" placeholder="Ingresar N° de Microchip..." style={{ flex: 1 }} />
+                      <button className="btn btn-primary" style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)', padding: '0.5rem 1rem' }} onClick={() => addNotification({ text: 'Buscando microchip en la base de datos nacional...', type: 'info' })}>
+                        <Search size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--color-text-muted)' }}>
+                    <Shield size={48} style={{ opacity: 0.2, marginBottom: '1rem', color: 'var(--color-success)' }} />
+                    <p style={{ margin: 0, textAlign: 'center' }}>No hay mascotas ingresadas bajo custodia clínica actualmente.</p>
+                  </div>
+                </div>
+              ) : coincidenciasList.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
                   {coincidenciasList.map((c, idx) => (
                     <div key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -429,12 +455,19 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 {alertasList.map((repo) => (
-                  <Marker key={repo.id} position={[repo.lat || -33.4489, repo.lng || -70.6693]}>
+                  <Marker 
+                    key={repo.id} 
+                    position={[repo.lat || -33.4489, repo.lng || -70.6693]}
+                    icon={repo.userRol === 'VETERINARIA' ? VetIcon : new L.Icon.Default()}
+                  >
                     <Popup>
                       <strong style={{ color: '#000' }}>{repo.titulo}</strong><br />
                       <span style={{ color: repo.tipo === 'Perdido' || repo.tipo === 'Mascota Perdida' ? 'red' : 'green' }}>
                         {repo.tipo === 'Perdido' || repo.tipo === 'Mascota Perdida' ? 'Perdido' : 'Encontrado'}
                       </span>
+                      {repo.userRol === 'VETERINARIA' && (
+                        <div style={{ marginTop: '5px', fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>✓ Alerta Profesional</div>
+                      )}
                     </Popup>
                   </Marker>
                 ))}

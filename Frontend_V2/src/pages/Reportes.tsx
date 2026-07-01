@@ -16,6 +16,19 @@ try {
   console.log('Leaflet icon fix skipped');
 }
 
+const VetIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background: var(--color-success); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12h6"></path><path d="M12 9v6"></path></svg></div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
+
+const razasPorEspecie: Record<string, string[]> = {
+  'Perro': ['Mestizo', 'Poodle', 'Pastor Alemán', 'Labrador', 'Bulldog', 'Chihuahua', 'Golden Retriever', 'Pitbull', 'Husky', 'Pug', 'Otro'],
+  'Gato': ['Europeo/Mestizo', 'Persa', 'Siamés', 'Angora', 'Maine Coon', 'Bengala', 'Esfinge', 'Otro'],
+  'Conejo': ['Mestizo', 'Cabeza de León', 'Belier', 'Angora', 'Rex', 'Holandés Enano', 'Otro']
+};
+
 const MapClickHandler = ({ onLocationSelected }: { onLocationSelected: (lat: number, lng: number) => void }) => {
   useMapEvents({
     click(e) {
@@ -37,6 +50,8 @@ const MapUpdater = ({ lat, lng }: { lat: number, lng: number }) => {
 export const Reportes = () => {
   const { addNotification, user } = useAuth();
   const isAdmin = user?.rol === 'ADMINISTRADOR';
+  const isVet = user?.rol === 'VETERINARIA';
+  const misReportesLabel = isVet ? 'Mis Casos (En Custodia)' : 'Mis Reportes';
 
   const [reportesDummy, setReportesDummy] = useState<any[]>(() => {
     try {
@@ -84,7 +99,7 @@ export const Reportes = () => {
     lng: -70.6693,
     nombre: '',
     color: '',
-    raza: '',
+    raza: 'Mestizo',
     edad: '',
     image: null as File | null,
     imageBase64: '',
@@ -102,7 +117,7 @@ export const Reportes = () => {
       lng: -70.6693,
       nombre: '',
       color: '',
-      raza: '',
+      raza: 'Mestizo',
       edad: '',
       image: null,
       imageBase64: '',
@@ -165,6 +180,7 @@ export const Reportes = () => {
         tipo: nuevoReporte.tipo,
         estado: 'Activo',
         userId: user?.id,
+        userRol: user?.rol,
         nombre: nuevoReporte.nombre,
         color: nuevoReporte.color,
         raza: nuevoReporte.raza,
@@ -264,8 +280,75 @@ export const Reportes = () => {
 
       <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr', gap: '2rem' }}>
         
-        {/* Filtros Globales (Afectan lista y mapa) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+        {/* Mapa sincronizado */}
+        <div className="surface" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MapPin size={20} color="var(--color-primary)" /> Mapa de Resultados
+            </h3>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-full)' }}>
+              Mostrando {reportesFiltrados.length} resultados
+            </span>
+          </div>
+
+          <div style={{ height: '400px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+            <MapContainer center={[-33.4489, -70.6693]} zoom={11} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {reportesFiltrados.map((repo) => (
+                <Marker 
+                  key={repo.id} 
+                  position={[repo.lat || -33.4489, repo.lng || -70.6693]}
+                  icon={repo.userRol === 'VETERINARIA' ? VetIcon : new L.Icon.Default()}
+                >
+                  <Popup>
+                    <strong style={{ color: '#000' }}>{repo.titulo}</strong><br />
+                    <span style={{ color: repo.tipo === 'Perdido' || repo.tipo === 'Mascota Perdida' ? 'red' : 'green' }}>{repo.tipo}</span>
+                    {repo.userRol === 'VETERINARIA' && (
+                      <div style={{ marginTop: '5px', fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>✓ Alerta Profesional</div>
+                    )}
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        </div>
+
+        {/* Pestañas para el ciudadano / veterinaria */}
+        {!isAdmin && (
+          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginTop: '1rem' }}>
+            <button
+              onClick={() => setActiveTab('mis_reportes')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '8px',
+                background: activeTab === 'mis_reportes' ? 'var(--color-primary)' : 'transparent',
+                color: activeTab === 'mis_reportes' ? '#fff' : 'var(--color-text)',
+                border: 'none', cursor: 'pointer', fontWeight: activeTab === 'mis_reportes' ? 600 : 400, transition: 'all 0.2s'
+              }}
+            >
+              <User size={18} /> {misReportesLabel}
+            </button>
+            <button
+              onClick={() => setActiveTab('todos')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '8px',
+                background: activeTab === 'todos' ? 'var(--color-primary)' : 'transparent',
+                color: activeTab === 'todos' ? '#fff' : 'var(--color-text)',
+                border: 'none', cursor: 'pointer', fontWeight: activeTab === 'todos' ? 600 : 400, transition: 'all 0.2s'
+              }}
+            >
+              <List size={18} /> Todos los Reportes
+            </button>
+          </div>
+        )}
+
+        {/* Filtros Globales (Movidos abajo de las pestañas) */}
+        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem 1rem 1rem 1rem', borderRadius: '12px', border: '1px solid var(--color-border)', marginTop: isAdmin ? '1rem' : '0' }}>
+          <div style={{ position: 'absolute', top: '-10px', left: '1rem', background: 'var(--color-bg)', padding: '0 0.5rem', fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500, borderRadius: '4px' }}>
+            🔍 Filtros Activos (Aplican al Mapa y a la Lista)
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-sidebar)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flex: 2, minWidth: '200px' }}>
             <Search size={18} color="var(--color-text-muted)" />
             <input 
@@ -294,71 +377,11 @@ export const Reportes = () => {
           </select>
         </div>
 
-        {/* Mapa sincronizado */}
-        <div className="surface" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <MapPin size={20} color="var(--color-primary)" /> Mapa de Resultados
-            </h3>
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-full)' }}>
-              Mostrando {reportesFiltrados.length} resultados
-            </span>
-          </div>
-
-          <div style={{ height: '400px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-            <MapContainer center={[-33.4489, -70.6693]} zoom={11} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {reportesFiltrados.map((repo) => (
-                <Marker key={repo.id} position={[repo.lat || -33.4489, repo.lng || -70.6693]}>
-                  <Popup>
-                    <strong style={{ color: '#000' }}>{repo.titulo}</strong><br />
-                    <span style={{ color: repo.tipo === 'Perdido' || repo.tipo === 'Mascota Perdida' ? 'red' : 'green' }}>{repo.tipo}</span>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-        </div>
-
-        {/* Pestañas para el ciudadano */}
-        {!isAdmin && (
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginTop: '1rem' }}>
-            <button
-              onClick={() => setActiveTab('mis_reportes')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '8px',
-                background: activeTab === 'mis_reportes' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'mis_reportes' ? '#fff' : 'var(--color-text)',
-                border: 'none', cursor: 'pointer', fontWeight: activeTab === 'mis_reportes' ? 600 : 400, transition: 'all 0.2s'
-              }}
-            >
-              <User size={18} /> Mis Reportes
-            </button>
-            <button
-              onClick={() => setActiveTab('todos')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '8px',
-                background: activeTab === 'todos' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'todos' ? '#fff' : 'var(--color-text)',
-                border: 'none', cursor: 'pointer', fontWeight: activeTab === 'todos' ? 600 : 400, transition: 'all 0.2s'
-              }}
-            >
-              <List size={18} /> Todos los Reportes
-            </button>
-          </div>
-        )}
-
         {/* Lista de Reportes */}
         <div className="surface" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={20} color="var(--color-primary)" /> {isAdmin ? 'Todos los Reportes' : (activeTab === 'mis_reportes' ? 'Mis Reportes' : 'Todos los Reportes')}
-          </h3>
-
+          
           {reportesFiltrados.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem 0' }}>No se encontraron reportes.</p>
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem 0' }}>No se encontraron reportes con estos filtros.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {reportesFiltrados.map((repo) => {
@@ -385,12 +408,12 @@ export const Reportes = () => {
                           
                           {(isAdmin || isMine) && (
                             <div style={{ display: 'flex', gap: '0.5rem', borderLeft: '1px solid var(--color-border)', paddingLeft: '1rem', marginLeft: '0.5rem' }}>
-                              {!isMine && <button className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-secondary)' }} title="Ver Detalle"><Eye size={18} /></button>}
-                              <button onClick={() => handleAction(repo.id, 'edit')} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-warning)' }} title="Editar"><Edit size={18} /></button>
+                              {!isMine && <button className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-secondary)' }} title="Ver Detalle del Reporte"><Eye size={18} /></button>}
+                              <button onClick={() => handleAction(repo.id, 'edit')} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-warning)' }} title="Editar Reporte"><Edit size={18} /></button>
                               {repo.estado !== 'Resuelto' && (
                                 <button onClick={() => handleAction(repo.id, 'resolve')} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-success)' }} title="Marcar como Resuelto"><Check size={18} /></button>
                               )}
-                              <button onClick={() => handleAction(repo.id, 'delete')} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-danger)' }} title={isAdmin ? "Eliminar/Bloquear" : "Eliminar"}><Trash2 size={18} /></button>
+                              <button onClick={() => handleAction(repo.id, 'delete')} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--color-danger)' }} title={isAdmin ? "Eliminar/Bloquear Reporte" : "Eliminar Reporte"}><Trash2 size={18} /></button>
                             </div>
                           )}
                         </div>
@@ -444,7 +467,10 @@ export const Reportes = () => {
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Especie</label>
-                  <select className="form-input" value={nuevoReporte.animal} onChange={(e) => setNuevoReporte({ ...nuevoReporte, animal: e.target.value })}>
+                  <select className="form-input" value={nuevoReporte.animal} onChange={(e) => {
+                    const newAnimal = e.target.value;
+                    setNuevoReporte({ ...nuevoReporte, animal: newAnimal, raza: razasPorEspecie[newAnimal][0] });
+                  }}>
                     <option value="Perro">Perro</option>
                     <option value="Gato">Gato</option>
                     <option value="Conejo">Conejo</option>
@@ -474,7 +500,18 @@ export const Reportes = () => {
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Raza</label>
-                  <input type="text" className="form-input" placeholder="Ej. Poodle" value={nuevoReporte.raza} onChange={(e) => setNuevoReporte({ ...nuevoReporte, raza: e.target.value })} />
+                  <select 
+                    className="form-input" 
+                    value={nuevoReporte.raza} 
+                    onChange={(e) => setNuevoReporte({ ...nuevoReporte, raza: e.target.value })}
+                  >
+                    {(razasPorEspecie[nuevoReporte.animal] || razasPorEspecie['Perro']).map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                    {!((razasPorEspecie[nuevoReporte.animal] || razasPorEspecie['Perro']).includes(nuevoReporte.raza)) && nuevoReporte.raza && (
+                      <option value={nuevoReporte.raza}>{nuevoReporte.raza} (Original)</option>
+                    )}
+                  </select>
                 </div>
               </div>
 

@@ -9,6 +9,7 @@ export interface AppNotification {
   type: string;
   date: string;
   actionData?: any;
+  read?: boolean;
 }
 
 interface AuthContextType {
@@ -41,6 +42,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('app_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'app_notifications' && e.newValue) {
+        try {
+          setNotifications(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error("Error parsing notifications from storage", error);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const addNotification = (notif: Omit<AppNotification, 'id' | 'date'>) => {
     const newNotif = {

@@ -10,10 +10,12 @@ import { Alertas } from './Alertas';
 import { Configuracion } from './Configuracion';
 import { Perfil } from './Perfil';
 import { SolicitudesRol } from './SolicitudesRol';
+import { Clinicas } from './Clinicas';
+import { Notificaciones } from './Notificaciones';
 import { userApi } from '../api';
 
 export const Dashboard = () => {
-  const { user, logout, notifications: allNotifications, removeNotification, addNotification } = useAuth();
+  const { user, logout, notifications: allNotifications, updateNotification, addNotification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,6 +37,7 @@ export const Dashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = allNotifications.filter(n => {
+    if (n.read) return false;
     if (isAdmin) {
       return !n.userId || n.userId === user?.id;
     } else {
@@ -46,14 +49,15 @@ export const Dashboard = () => {
 
   const closeAndClearNotifications = () => {
     setShowNotifications(false);
+    // Marcamos todas las notificaciones push (no de rol) como leídas
     const idsToClear = notifications.filter(n => n.type !== 'role_request').map(n => n.id);
-    idsToClear.forEach(id => removeNotification(id));
+    idsToClear.forEach(id => updateNotification(id, { read: true }));
   };
 
   const handleAcceptRole = async (notif: any) => {
     try {
       await userApi.updateRole(notif.actionData.userId, notif.actionData.requestedRole);
-      removeNotification(notif.id);
+      updateNotification(notif.id, { read: true, type: 'role_request_accepted', text: `Solicitud de ${notif.actionData.requestedRole} de ${notif.actionData.userName} (Aceptada)` });
       addNotification({
         userId: notif.actionData.userId,
         text: `Tu solicitud de cambio de rol a ${notif.actionData.requestedRole} ha sido aceptada.`,
@@ -66,7 +70,7 @@ export const Dashboard = () => {
   };
 
   const handleRejectRole = (notif: any) => {
-    removeNotification(notif.id);
+    updateNotification(notif.id, { read: true, type: 'role_request_rejected', text: `Solicitud de ${notif.actionData.requestedRole} de ${notif.actionData.userName} (Rechazada)` });
     addNotification({
       userId: notif.actionData.userId,
       text: `Tu solicitud de cambio de rol a ${notif.actionData.requestedRole} ha sido rechazada.`,
@@ -79,6 +83,7 @@ export const Dashboard = () => {
     { title: 'Gestión Usuarios', path: 'usuarios', icon: <Users size={20} /> },
     { title: 'Solicitudes de Rol', path: 'solicitudes-rol', icon: <Shield size={20} /> },
     { title: 'Reportes Generales', path: 'reportes', icon: <FileText size={20} /> },
+    { title: 'Notificaciones', path: 'notificaciones', icon: <Bell size={20} /> },
     { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
     { title: 'Configuración del Sistema', path: 'configuracion', icon: <Settings size={20} /> },
   ];
@@ -87,10 +92,20 @@ export const Dashboard = () => {
     { title: 'Mi Panel', path: '', icon: <LayoutDashboard size={20} /> },
     { title: 'Reportes', path: 'reportes', icon: <FileText size={20} /> },
     { title: 'Alertas Locales', path: 'alertas', icon: <AlertTriangle size={20} /> },
+    { title: 'Notificaciones', path: 'notificaciones', icon: <Bell size={20} /> },
     { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
   ];
 
-  const sidebarMenu = isAdmin ? adminMenu : userMenu;
+  const vetMenu = [
+    { title: 'Mi Panel', path: '', icon: <LayoutDashboard size={20} /> },
+    { title: 'Reportes', path: 'reportes', icon: <FileText size={20} /> },
+    { title: 'Directorio Clínicas', path: 'clinicas', icon: <Shield size={20} /> },
+    { title: 'Alertas Locales', path: 'alertas', icon: <AlertTriangle size={20} /> },
+    { title: 'Notificaciones', path: 'notificaciones', icon: <Bell size={20} /> },
+    { title: 'Mi Perfil', path: 'perfil', icon: <UserIcon size={20} /> },
+  ];
+
+  const sidebarMenu = isAdmin ? adminMenu : (user?.rol === 'VETERINARIA' ? vetMenu : userMenu);
 
   return (
     <div className="app-layout">
@@ -202,6 +217,8 @@ export const Dashboard = () => {
             <Route path="alertas" element={<Alertas />} />
             <Route path="configuracion" element={<Configuracion />} />
             <Route path="perfil" element={<Perfil />} />
+            <Route path="clinicas" element={<Clinicas />} />
+            <Route path="notificaciones" element={<Notificaciones />} />
           </Routes>
         </main>
       </div>

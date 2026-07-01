@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User as UserIcon, Edit2, Check, X, ShieldAlert } from 'lucide-react';
+import { User as UserIcon, Edit2, Check, X, ShieldAlert, UploadCloud, FileText, Trash2, Loader } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { userApi } from '../api';
 
@@ -16,6 +16,7 @@ export const Perfil = () => {
   const [requestedRole, setRequestedRole] = useState('VETERINARIA');
   const [certificado, setCertificado] = useState<File | null>(null);
   const [roleModalError, setRoleModalError] = useState('');
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -53,7 +54,7 @@ export const Perfil = () => {
     setMensaje('');
   };
 
-  const handleRoleRequest = () => {
+  const handleRoleRequest = async () => {
     if (!user) return;
 
     if (!certificado) {
@@ -62,6 +63,10 @@ export const Perfil = () => {
     }
 
     setRoleModalError('');
+    setIsSubmittingRole(true);
+
+    // Simulamos un tiempo de subida de archivo para dar feedback visual
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     addNotification({
       userId: user.id,
@@ -84,10 +89,20 @@ export const Perfil = () => {
     setMensaje(`Solicitud para cambiar de rol a ${requestedRole} enviada al administrador.`);
     setIsRoleModalOpen(false);
     setCertificado(null);
+    setIsSubmittingRole(false);
   };
 
   return (
     <div className="animate-fade-in" style={{ marginTop: '3rem' }}>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ padding: '0.75rem', background: 'rgba(122, 92, 255, 0.1)', borderRadius: '12px', color: 'var(--color-primary)' }}>
           <UserIcon size={28} />
@@ -229,18 +244,75 @@ export const Perfil = () => {
 
               <div className="form-group">
                 <label className="form-label">Archivo de Certificación (PDF o Imagen)</label>
-                <input 
-                  type="file" 
-                  className="form-input" 
-                  accept=".pdf,image/*"
-                  onChange={(e) => setCertificado(e.target.files?.[0] ?? null)}
-                />
-                <small style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>Sube un documento oficial que certifique tu solicitud para ser {requestedRole.toLowerCase()}.</small>
+                
+                <div style={{
+                  border: '2px dashed rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.2)',
+                  position: 'relative',
+                  marginTop: '0.5rem',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                onMouseOver={(e) => !certificado && (e.currentTarget.style.borderColor = 'var(--color-primary)')}
+                onMouseOut={(e) => !certificado && (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)')}
+                >
+                  <input 
+                    type="file" 
+                    id="certificado-upload"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setCertificado(e.target.files?.[0] ?? null)}
+                    style={{ display: 'none' }}
+                  />
+                  
+                  {!certificado ? (
+                    <label htmlFor="certificado-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%', height: '100%' }}>
+                      <UploadCloud size={40} color="var(--color-primary)" style={{ opacity: 0.8 }} />
+                      <p style={{ margin: 0, fontWeight: 500, color: '#fff' }}>Arrastra tu certificado aquí o haz clic para explorar</p>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>Formatos soportados: PDF, JPG, PNG</p>
+                    </label>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', background: 'rgba(122, 92, 255, 0.1)', padding: '1rem', borderRadius: '8px' }}>
+                      <FileText size={24} color="var(--color-primary)" />
+                      <span style={{ fontWeight: 500, color: '#fff', wordBreak: 'break-all' }}>{certificado.name}</span>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); setCertificado(null); }}
+                        style={{ background: 'rgba(239, 68, 68, 0.2)', border: 'none', color: 'var(--color-danger)', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Eliminar archivo"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <small style={{ color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.75rem', display: 'block', fontSize: '0.85rem' }}>
+                  Sube un documento oficial que certifique tu solicitud para ser {requestedRole.toLowerCase()}.
+                </small>
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => { setIsRoleModalOpen(false); setRoleModalError(''); setCertificado(null); }}>Cancelar</button>
-                <button className="btn btn-primary" onClick={handleRoleRequest}>Enviar Solicitud</button>
+                <button 
+                  className="btn" 
+                  style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} 
+                  onClick={() => { setIsRoleModalOpen(false); setRoleModalError(''); setCertificado(null); }}
+                  disabled={isSubmittingRole}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleRoleRequest}
+                  disabled={isSubmittingRole}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '160px', justifyContent: 'center', opacity: isSubmittingRole ? 0.7 : 1 }}
+                >
+                  {isSubmittingRole ? (
+                    <>
+                      <Loader size={18} className="animate-spin-custom" /> Enviando...
+                    </>
+                  ) : 'Enviar Solicitud'}
+                </button>
               </div>
             </div>
           </div>

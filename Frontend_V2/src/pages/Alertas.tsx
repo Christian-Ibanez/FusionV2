@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, MapPin, Info, Search } from 'lucide-react';
+import { AlertTriangle, MapPin, Info, Search, Eye, MessageCircle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 
 export const Alertas = () => {
@@ -35,8 +35,27 @@ export const Alertas = () => {
   const getBorderColor = (tipo: string) => tipo === 'Perdido' ? 'var(--color-danger)' : 'var(--color-success)';
   const getBadgeBg = (tipo: string) => tipo === 'Perdido' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)';
 
+  const getDistanceMock = (lat?: number, lng?: number) => {
+    if (!lat || !lng) return 'Ubicación desconocida';
+    // Generar una distancia determinística basada en las coordenadas
+    const dist = (Math.abs(lat * lng) % 5) + 0.5;
+    const target = user?.rol === 'VETERINARIA' ? 'de tu clínica' : 'de ti';
+    return `A ${dist.toFixed(1)} km ${target}`;
+  };
+
   return (
     <div className="animate-fade-in" style={{ marginTop: '3rem' }}>
+      <style>{`
+        @keyframes borderPulse {
+          0% { border-left-color: var(--color-danger); }
+          50% { border-left-color: rgba(239, 68, 68, 0.4); }
+          100% { border-left-color: var(--color-danger); }
+        }
+        .urgent-border {
+          border-left-width: 8px !important;
+          animation: borderPulse 2s infinite;
+        }
+      `}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ padding: '0.75rem', background: 'rgba(247, 118, 142, 0.1)', borderRadius: '12px', color: 'var(--color-danger)' }}>
           <AlertTriangle size={28} />
@@ -94,8 +113,22 @@ export const Alertas = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {alertasParaMostrar.map((alerta) => (
-            <div key={alerta.id} className="surface" style={{ padding: '1.5rem', display: 'flex', gap: '2rem', alignItems: 'flex-start', borderLeft: `4px solid ${getBorderColor(alerta.tipo)}` }}>
+          {alertasParaMostrar.map((alerta) => {
+            const isUrgent = alerta.tipo === 'Perdido'; // Simular urgencia para mascotas perdidas
+            return (
+            <div key={alerta.id} className={`surface ${isUrgent ? 'urgent-border' : ''}`} style={{ 
+              padding: '1.5rem', 
+              display: 'flex', 
+              gap: '2rem', 
+              alignItems: 'flex-start', 
+              borderLeft: `4px solid ${getBorderColor(alerta.tipo)}`,
+              position: 'relative'
+            }}>
+              {/* ID Reporte en esquina superior derecha */}
+              <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>
+                ID: #{alerta.id}
+              </div>
+
               {/* Contenedor de la Imagen */}
               <div style={{ width: '250px', height: '250px', flexShrink: 0, borderRadius: '12px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {alerta.imageBase64 ? (
@@ -109,52 +142,95 @@ export const Alertas = () => {
                 )}
               </div>
 
-              {/* Contenedor de la Información Detallada */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem', color: '#fff' }}>{alerta.titulo} <span style={{ color: 'var(--color-primary)', fontSize: '1.2rem', fontWeight: 'normal' }}>#{alerta.id}</span></h2>
-                  <span style={{ padding: '0.3rem 0.8rem', borderRadius: 'var(--radius-full)', background: getBadgeBg(alerta.tipo), color: getBorderColor(alerta.tipo), fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    {alerta.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'}
-                  </span>
+              {/* Contenedor de la Información Detallada y Botones */}
+              <div style={{ flex: 1, display: 'flex', gap: '2rem', minHeight: '250px' }}>
+                
+                {/* Información */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '2.2rem', fontWeight: 'bold', color: '#fff', textTransform: 'capitalize' }}>{alerta.titulo}</h2>
+                    <span style={{ padding: '0.3rem 0.8rem', borderRadius: 'var(--radius-full)', background: getBadgeBg(alerta.tipo), color: getBorderColor(alerta.tipo), fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      {alerta.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                    {alerta.tipo === 'Perdido' && (
+                      <div>
+                        <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>Nombre</p>
+                        <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.nombre || 'Desconocido'}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>Especie</p>
+                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.animal || alerta.especie || 'No especificada'}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>Raza</p>
+                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.raza || 'No especificada'}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>Color</p>
+                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.color || 'No especificado'}</p>
+                    </div>
+                    {alerta.tipo === 'Perdido' && (
+                      <div>
+                        <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>Edad</p>
+                        <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.edad ? `${alerta.edad} años` : 'No especificada'}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 'auto', background: 'rgba(59, 130, 246, 0.1)', padding: '0.8rem', borderRadius: '8px', color: 'var(--color-secondary)' }}>
+                    <MapPin size={24} style={{ color: 'var(--color-primary)' }} />
+                    <span style={{ fontWeight: 500, fontSize: '1.1rem', color: '#fff' }}>
+                      📍 {getDistanceMock(alerta.lat, alerta.lng)}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginLeft: 'auto' }}>
+                      {alerta.tipo === 'Perdido' ? 'Última vez visto' : 'Ubicación actual'}
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
-                  {alerta.tipo === 'Perdido' && (
-                    <div>
-                      <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Nombre</p>
-                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.nombre || 'Desconocido'}</p>
-                    </div>
+                {/* Botones de Acción */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '220px', justifyContent: 'center' }}>
+                  {user && (user.id === alerta.userId || user.id === alerta.usuarioId) ? (
+                    <button className="btn" style={{ 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                      padding: '1rem', width: '100%', borderRadius: '8px', 
+                      background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', border: '1px dashed rgba(255,255,255,0.2)', cursor: 'default'
+                    }}>
+                      Este es tu reporte
+                    </button>
+                  ) : (
+                    <button className="btn" style={{ 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                      padding: '1rem', width: '100%', borderRadius: '8px', 
+                      background: 'var(--color-primary)', color: '#fff', fontWeight: 'bold', border: 'none', cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', transition: 'all 0.2s'
+                    }}>
+                      <MessageCircle size={20} />
+                      Chat / Contactar
+                    </button>
                   )}
-                  <div>
-                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Especie</p>
-                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.animal || alerta.especie || 'No especificada'}</p>
-                  </div>
-                  <div>
-                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Raza</p>
-                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.raza || 'No especificada'}</p>
-                  </div>
-                  <div>
-                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Color</p>
-                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.color || 'No especificado'}</p>
-                  </div>
-                  {alerta.tipo === 'Perdido' && (
-                    <div>
-                      <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Edad</p>
-                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{alerta.edad ? `${alerta.edad} años` : 'No especificada'}</p>
-                    </div>
-                  )}
+                  <button className="btn" style={{ 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                    padding: '1rem', width: '100%', borderRadius: '8px', 
+                    background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+                  onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                  >
+                    <Eye size={20} />
+                    Ver Detalles
+                  </button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 'auto', background: 'rgba(59, 130, 246, 0.1)', padding: '0.8rem', borderRadius: '8px', color: 'var(--color-secondary)' }}>
-                  <MapPin size={20} />
-                  <span style={{ fontWeight: 500 }}>
-                    {alerta.tipo === 'Perdido' ? 'Coordenadas de pérdida:' : 'Coordenadas de hallazgo:'}
-                  </span>
-                  <span style={{ fontFamily: 'monospace' }}>Lat: {alerta.lat?.toFixed(4)}, Lng: {alerta.lng?.toFixed(4)}</span>
-                </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
