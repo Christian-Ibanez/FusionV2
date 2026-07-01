@@ -69,15 +69,15 @@ export const userApi = {
 
 export const reportesApi = {
   getActivos: async () => {
-    const res = await axios.get('http://localhost:8081/api/reportes/activos');
+    const res = await api.get('/reportes/activos');
     return res.data;
   },
   getTodos: async () => {
-    const res = await axios.get('http://localhost:8081/api/reportes/todos');
+    const res = await api.get('/reportes/todos');
     return res.data;
   },
   crear: async (data: any) => {
-    const res = await axios.post('http://localhost:8081/api/reportes/crearReporte', data);
+    const res = await api.post('/reportes/crearReporte', data);
     return res.data;
   }
 };

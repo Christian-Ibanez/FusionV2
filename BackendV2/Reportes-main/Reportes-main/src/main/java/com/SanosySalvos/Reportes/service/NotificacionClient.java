@@ -3,6 +3,7 @@ package com.SanosySalvos.Reportes.service;
 import com.SanosySalvos.Reportes.dto.NotificacionRequestDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -12,9 +13,12 @@ public class NotificacionClient {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Value("${NOTIFICACION_SERVICE_URL:http://localhost:8083}")
+    private String notificacionServiceUrl;
+
     @CircuitBreaker(name = "servicioNotificaciones", fallbackMethod = "enviarFallback")
     public void enviarNotificacion(NotificacionRequestDTO request) {
-        String url = "http://localhost:8083/api/notificaciones/enviar";
+        String url = notificacionServiceUrl + "/api/notificaciones/enviar";
         restTemplate.postForObject(url, request, String.class);
     }
 

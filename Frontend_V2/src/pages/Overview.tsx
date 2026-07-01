@@ -47,6 +47,7 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(true);
   const [acceptingIncomes, setAcceptingIncomes] = useState(true);
+  const [selectedMatchImage, setSelectedMatchImage] = useState<string | null>(null);
   const isRefugio = user?.rol === 'REFUGIO';
 
   useEffect(() => {
@@ -131,14 +132,19 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           for (const reporte of misReportesPerdidos) {
             try {
               const matches = await coincidenciasApi.getByReporte(reporte.id);
-              coincidenciasDetalladas = [...coincidenciasDetalladas, ...matches.map((m: any) => ({
-                ...m,
-                titulo: `¡Coincidencia del ${m.porcentajeSimilitud}%!`,
-                mensaje: `Se encontró un posible match para el reporte #${reporte.id}. El reporte coincidente es el #${m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId}. Estado: ${m.estado}`,
-                fechaCreacion: m.fechaCalculo,
-                reporteMio: reporte.id,
-                reporteMatch: m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId
-              }))];
+              coincidenciasDetalladas = [...coincidenciasDetalladas, ...matches.map((m: any) => {
+                const matchId = m.reporteEncontradoId === reporte.id ? m.reportePerdidoId : m.reporteEncontradoId;
+                const matchReporte = [...reportes, ...localReportes].find((r: any) => r.id === matchId);
+                return {
+                  ...m,
+                  titulo: `¡Coincidencia del ${m.porcentajeSimilitud}%!`,
+                  mensaje: `Se encontró un posible match para el reporte #${reporte.id}. El reporte coincidente es el #${matchId}. Estado: ${m.estado}`,
+                  fechaCreacion: m.fechaCalculo,
+                  reporteMio: reporte.id,
+                  reporteMatch: matchId,
+                  matchImageBase64: matchReporte ? (matchReporte.urlImagen || matchReporte.imageBase64) : null
+                };
+              })];
             } catch (err) {
               console.error("No se pudieron cargar coincidencias para reporte " + reporte.id);
             }
@@ -475,7 +481,10 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
                       <p style={{ margin: 0, color: '#fff', fontSize: '0.95rem', lineHeight: '1.4' }}>
                         ¡Atención! Alguien reportó una mascota muy parecida a tu caso <strong>#{c.reporteMio || '...'}</strong>.
                       </p>
-                      <button className="btn btn-primary" style={{ background: 'var(--color-primary)', border: 'none', padding: '0.6rem', fontSize: '0.9rem', width: '100%', display: 'flex', justifyContent: 'center', fontWeight: 'bold' }}>
+                      <button 
+                        onClick={() => setSelectedMatchImage(c.matchImageBase64 || 'default')}
+                        className="btn btn-primary" 
+                        style={{ background: 'var(--color-primary)', border: 'none', padding: '0.6rem', fontSize: '0.9rem', width: '100%', display: 'flex', justifyContent: 'center', fontWeight: 'bold' }}>
                         Ver foto del caso #{c.reporteMatch || '...'}
                       </button>
                     </div>
@@ -544,6 +553,38 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Modal para ver foto de la coincidencia */}
+      {selectedMatchImage && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: '12px' }}>
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>Foto del Caso Coincidente</h3>
+              <button onClick={() => setSelectedMatchImage(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>
+                <X size={24} />
+              </button>
+            </div>
+            <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
+              {selectedMatchImage === 'default' ? (
+                <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '3rem 0' }}>
+                  <AlertCircle size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                  <p>Imagen no disponible o no fue encontrada para este reporte.</p>
+                </div>
+              ) : (
+                <img src={selectedMatchImage} alt="Coincidencia" style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '8px', objectFit: 'contain' }} />
+              )}
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setSelectedMatchImage(null)}>
+                Cerrar
+              </button>
+              <button className="btn btn-primary" onClick={() => { setSelectedMatchImage(null); navigate('/dashboard/alertas'); }}>
+                Ver Detalles en Alertas
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

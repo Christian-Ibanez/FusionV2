@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnTransformer;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,13 +57,14 @@ public class Reporte {
     private LocalDateTime fechaIncidente; 
 
     
-    @Column(length = 500)
+    @Column(columnDefinition = "TEXT")
     private String urlImagen; 
 
     @Column(columnDefinition = "TEXT")
     private String descripcion; 
     
-    @Column(name = "vector_imagen", columnDefinition = "vector(512)") // Using 512 as an example dimension
+    @Column(name = "vector_imagen", columnDefinition = "vector(512)", length = 20000) // Using 512 as an example dimension
+    @ColumnTransformer(write="?::vector")
     private String vectorImagen;
 
     @Column(name = "fecha_creacion", updatable = false)

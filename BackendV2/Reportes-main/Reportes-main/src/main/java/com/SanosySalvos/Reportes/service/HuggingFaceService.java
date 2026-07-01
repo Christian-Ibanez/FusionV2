@@ -23,16 +23,37 @@ public class HuggingFaceService {
             return null;
         }
 
-        if (apiKey == null || apiKey.isEmpty()) {
-            System.out.println("⚠️ No hay API Key de Hugging Face configurada. Generando vector falso (Mock)...");
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("your_huggingface_api_key_here")) {
+            System.out.println("⚠️ No hay API Key válida configurada. Generando vector falso (Mock) instantáneamente...");
             return mockVector();
         }
 
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(5000);
+            factory.setReadTimeout(5000);
+            RestTemplate restTemplate = new RestTemplate(factory);
             
-            // 1. Descargar la imagen desde su URL (Cloudinary, S3, etc.)
-            byte[] imageBytes = restTemplate.getForObject(imageUrl, byte[].class);
+            byte[] imageBytes;
+            if (imageUrl.startsWith("data:image/")) {
+                int commaIndex = imageUrl.indexOf(",");
+                if (commaIndex != -1) {
+                    String base64Data = imageUrl.substring(commaIndex + 1);
+                    imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                } else {
+                    System.err.println("Error: Formato Base64 inválido.");
+                    return null;
+                }
+            } else if (imageUrl.startsWith("/app/imagenes_prueba/")) {
+                try {
+                    imageBytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(imageUrl));
+                } catch (Exception e) {
+                    System.err.println("Error al leer archivo local: " + e.getMessage());
+                    return null;
+                }
+            } else {
+                imageBytes = restTemplate.getForObject(imageUrl, byte[].class);
+            }
             
             if (imageBytes == null) {
                 System.err.println("Error: No se pudo descargar la imagen para convertirla a vector.");

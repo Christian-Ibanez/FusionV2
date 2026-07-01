@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, MapPin, Info, Search, Eye, MessageCircle } from 'lucide-react';
+import { AlertTriangle, MapPin, Info, Search, Eye, MessageCircle, X } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import { useAuth } from '../AuthContext';
+
+// Fix for default marker icons in Leaflet with bundlers
+try {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  });
+} catch (e) {
+  console.log('Leaflet icon fix skipped');
+}
 
 export const Alertas = () => {
   const { user } = useAuth();
@@ -13,6 +27,7 @@ export const Alertas = () => {
   });
 
   const [filtro, setFiltro] = useState<'Todos' | 'Perdido' | 'Encontrado'>('Todos');
+  const [selectedAlerta, setSelectedAlerta] = useState<any>(null);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -234,6 +249,7 @@ export const Alertas = () => {
                   }}
                   onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
                   onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                  onClick={() => setSelectedAlerta(alerta)}
                   >
                     <Eye size={20} />
                     Ver Detalles
@@ -246,6 +262,83 @@ export const Alertas = () => {
           })}
         </div>
       )}
+
+      {/* Modal de Detalles del Reporte */}
+      {selectedAlerta && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: '12px' }}>
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Eye size={20} color="var(--color-primary)" /> Detalles del Caso #{selectedAlerta.id}
+              </h3>
+              <button onClick={() => setSelectedAlerta(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                
+                {/* Columna Izquierda: Imagen y Resumen */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ width: '100%', height: '250px', borderRadius: '12px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                    {selectedAlerta.imageBase64 ? (
+                      <img src={selectedAlerta.imageBase64} alt={selectedAlerta.nombre || 'Mascota'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                        <Info size={40} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                        <p style={{ margin: 0 }}>Sin imagen disponible</p>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-primary)' }}>Resumen</h4>
+                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.9rem' }}><strong>Especie:</strong> {selectedAlerta.animal || selectedAlerta.especie || 'N/A'}</p>
+                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.9rem' }}><strong>Raza:</strong> {selectedAlerta.raza || 'N/A'}</p>
+                    <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.9rem' }}><strong>Color:</strong> {selectedAlerta.color || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Descripción y Mapa */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Info size={18} /> Descripción Adicional
+                    </h4>
+                    <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                      {selectedAlerta.descripcion ? selectedAlerta.descripcion : 'No se proporcionó información adicional para este reporte.'}
+                    </p>
+                  </div>
+
+                  <div style={{ flex: 1, minHeight: '200px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '0.5rem 1rem', background: 'var(--color-sidebar)', borderBottom: '1px solid var(--color-border)', fontSize: '0.85rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <MapPin size={16} color="var(--color-primary)" /> Ubicación Registrada
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <MapContainer center={[selectedAlerta.lat || -33.4489, selectedAlerta.lng || -70.6693]} zoom={14} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker position={[selectedAlerta.lat || -33.4489, selectedAlerta.lng || -70.6693]}>
+                          <Popup>
+                            <strong>Ubicación del reporte:</strong><br />
+                            {selectedAlerta.titulo}
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn" style={{ background: 'var(--color-primary)', border: 'none', color: '#fff', fontWeight: 'bold' }} onClick={() => setSelectedAlerta(null)}>
+                Cerrar Detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

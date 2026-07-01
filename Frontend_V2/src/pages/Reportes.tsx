@@ -102,6 +102,7 @@ export const Reportes = () => {
     color: '',
     raza: 'Mestizo',
     edad: '',
+    descripcion: '',
     image: null as File | null,
     imageBase64: '',
   });
@@ -120,6 +121,7 @@ export const Reportes = () => {
       color: '',
       raza: 'Mestizo',
       edad: '',
+      descripcion: '',
       image: null,
       imageBase64: '',
     });
@@ -161,6 +163,7 @@ export const Reportes = () => {
             color: nuevoReporte.color,
             raza: nuevoReporte.raza,
             edad: nuevoReporte.edad,
+            descripcion: nuevoReporte.descripcion,
             animal: nuevoReporte.animal,
             imageName: nuevoReporte.image?.name ?? r.imageName,
             imageBase64: nuevoReporte.imageBase64 || r.imageBase64,
@@ -178,15 +181,38 @@ export const Reportes = () => {
           usuarioId: user?.id,
           tipoReporte: nuevoReporte.tipo === 'Perdido' ? 'PERDIDO' : 'ENCONTRADO',
           titulo: nuevoReporte.titulo || (nuevoReporte.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'),
-          descripcion: `Animal: ${nuevoReporte.animal}. Color: ${nuevoReporte.color}. Raza: ${nuevoReporte.raza}.`,
+          descripcion: `Animal: ${nuevoReporte.animal}. Color: ${nuevoReporte.color}. Raza: ${nuevoReporte.raza}.${nuevoReporte.descripcion ? ' Notas adicionales: ' + nuevoReporte.descripcion : ''}`,
           estado: 'ACTIVO',
           latitud: nuevoReporte.lat,
           longitud: nuevoReporte.lng,
+          fechaIncidente: new Date().toISOString(),
           urlImagen: nuevoReporte.imageBase64 // Base64 sent to backend
         };
         
-        await reportesApi.crear(payload);
+        const response = await reportesApi.crear(payload);
         addNotification({ text: `¡Reporte publicado en el servidor!`, type: 'success' });
+        
+        // Agregar al frontend local para que aparezca en la UI inmediatamente
+        const newReportForUI = {
+          id: response.id || Date.now(),
+          userId: user?.id,
+          lat: nuevoReporte.lat,
+          lng: nuevoReporte.lng,
+          titulo: nuevoReporte.titulo || (nuevoReporte.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'),
+          tipo: nuevoReporte.tipo,
+          nombre: nuevoReporte.nombre,
+          color: nuevoReporte.color,
+          raza: nuevoReporte.raza,
+          edad: nuevoReporte.edad,
+          descripcion: nuevoReporte.descripcion,
+          animal: nuevoReporte.animal,
+          imageName: nuevoReporte.image?.name,
+          imageBase64: nuevoReporte.imageBase64,
+          estado: 'Activo'
+        };
+        const updatedLocal = [...reportesDummy, newReportForUI];
+        localStorage.setItem('app_reportes_v2', JSON.stringify(updatedLocal));
+        setReportesDummy(updatedLocal);
         
         // Reload page to fetch real data
         setTimeout(() => window.location.reload(), 1000);
@@ -220,6 +246,7 @@ export const Reportes = () => {
           color: reportToEdit.color || '',
           raza: reportToEdit.raza || '',
           edad: reportToEdit.edad || '',
+          descripcion: reportToEdit.descripcion || '',
           image: null,
           imageBase64: reportToEdit.imageBase64 || '',
         });
@@ -511,6 +538,18 @@ export const Reportes = () => {
                     )}
                   </select>
                 </div>
+              </div>
+
+              {/* Campo de Descripción Opcional */}
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label">Descripción adicional (Opcional)</label>
+                <textarea 
+                  className="form-input" 
+                  placeholder="Ej. Tenía un collar rojo, es muy asustadizo, tiene una mancha en la oreja..." 
+                  value={nuevoReporte.descripcion} 
+                  onChange={(e) => setNuevoReporte({ ...nuevoReporte, descripcion: e.target.value })}
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                />
               </div>
 
               {/* Zona de subida de imagen estilizada (Drag & Drop look) */}
