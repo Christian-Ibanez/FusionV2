@@ -8,6 +8,7 @@ import com.SanosySalvos.Reportes.model.Reporte;
 import com.SanosySalvos.Reportes.model.TipoReporte;
 import com.SanosySalvos.Reportes.repository.ReporteRepository;
 import com.SanosySalvos.Reportes.service.impl.ReporteServiceImpl;
+import com.SanosySalvos.Reportes.service.NotificacionClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class ReporteServiceImplTest {
 
     @Mock
     private CoincidenciaClient coincidenciaClient;
+
+    @Mock
+    private NotificacionClient notificacionClient;
 
     @InjectMocks
     private ReporteServiceImpl reporteService;
@@ -171,7 +175,7 @@ class ReporteServiceImplTest {
         when(reporteRepository.save(any(Reporte.class))).thenReturn(reporteActivo);
 
         // Act
-        ReporteResponseDTO response = reporteService.marcarComoResuelto(1L, 10L);
+        ReporteResponseDTO response = reporteService.marcarComoResuelto(1L, 10L, null);
 
         // Assert
         assertNotNull(response);
@@ -186,7 +190,7 @@ class ReporteServiceImplTest {
 
         // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            reporteService.marcarComoResuelto(1L, 99L); // Intruso
+            reporteService.marcarComoResuelto(1L, 99L, null); // Intruso
         });
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
@@ -200,7 +204,7 @@ class ReporteServiceImplTest {
 
         // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            reporteService.marcarComoResuelto(999L, 10L);
+            reporteService.marcarComoResuelto(999L, 10L, null);
         });
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());

@@ -190,7 +190,7 @@ export const Reportes = () => {
         };
         
         const response = await reportesApi.crear(payload);
-        addNotification({ text: `¡Reporte publicado en el servidor!`, type: 'success' });
+        addNotification({ text: `¡Reporte creado de manera exitosa!`, type: 'success' });
         
         // Agregar al frontend local para que aparezca en la UI inmediatamente
         const newReportForUI = {

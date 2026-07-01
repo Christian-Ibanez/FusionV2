@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from './api';
+import { authApi, userApi } from './api';
 import type { User } from './api';
 
 export interface AppNotification {
@@ -91,9 +91,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Initial load: normally we'd check token and fetch user again.
-    // For simplicity, we just stop loading if no token.
-    setLoading(false);
+    const fetchFreshUser = async () => {
+      const token = sessionStorage.getItem('token');
+      if (token && user?.correoElectronico) {
+        try {
+          const freshUser = await userApi.getUserByCorreo(user.correoElectronico);
+          setUser(freshUser);
+        } catch (e) {
+          console.error("Error fetching fresh user", e);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchFreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (correo: string, contrasena: string) => {

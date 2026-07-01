@@ -50,6 +50,10 @@ export const authApi = {
 };
 
 export const userApi = {
+  getUserByCorreo: async (correo: string) => {
+    const res = await api.get<User>(`/usuarios/correo/${correo}`);
+    return res.data;
+  },
   updateProfile: async (id: number, data: { nombreCompleto: string; telefono: string }) => {
     const res = await api.put<User>(`/usuarios/${id}/perfil`, data);
     return res.data;
