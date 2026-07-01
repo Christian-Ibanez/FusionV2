@@ -68,12 +68,39 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           r.tipoReporte === 'PERDIDO' || r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida'
         );
 
+        const mappedActivos = activos.map((r: any) => {
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion;
+          if (r.descripcion && r.descripcion.includes('Animal:')) {
+            const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
+            const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
+            const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
+            if (animalMatch) animal = animalMatch[1];
+            if (colorMatch) color = colorMatch[1];
+            if (razaMatch) raza = razaMatch[1];
+            if (notasMatch) notas = notasMatch[1];
+          }
+          return {
+            id: r.id,
+            userId: r.usuarioId,
+            lat: r.latitud,
+            lng: r.longitud,
+            titulo: r.titulo,
+            tipo: r.tipoReporte === 'PERDIDO' ? 'Perdido' : 'Encontrado',
+            descripcion: notas,
+            animal,
+            color,
+            raza,
+            imageBase64: r.urlImagen,
+            estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
+          };
+        });
+
         const localReportesStr = localStorage.getItem('app_reportes_v2');
         const localReportes = localReportesStr ? JSON.parse(localReportesStr) : [];
         const localActivos = localReportes.filter((r: any) => r.estado === 'Activo');
-        const localAlertasMascotaPerdida = localActivos.filter((r: any) => r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida');
 
-        const combinedActivosRaw = [...activos, ...localActivos];
+        const combinedActivosRaw = [...mappedActivos, ...localActivos];
         // Deduplicar por ID (los locales y los del backend pueden solaparse)
         const combinedActivosMap = new Map();
         combinedActivosRaw.forEach((r: any) => {
