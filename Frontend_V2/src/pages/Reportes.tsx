@@ -242,7 +242,7 @@ export const Reportes = () => {
           }
           
           setReportesDummy(reportesDummy.map(r => {
-            if (r.id === id || (matchId && r.id === matchId)) {
+            if (String(r.id) === String(id) || (matchId && String(r.id) === String(matchId))) {
               return { ...r, estado: 'Resuelto' };
             }
             return r;

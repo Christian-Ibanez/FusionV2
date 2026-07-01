@@ -5,7 +5,7 @@ echo ========================================================
 echo.
 
 echo Apagando contenedores del Backend...
-cd ..\FusionV2\BackendV2\Llave-Docker
+cd ..\BackendV2\Llave-Docker
 docker-compose stop
 
 echo.

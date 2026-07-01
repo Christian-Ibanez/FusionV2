@@ -5,8 +5,8 @@ echo ========================================================
 echo.
 
 echo [1/2] Levantando contenedores del Backend (Docker)...
-cd ..\FusionV2\BackendV2\Llave-Docker
-docker-compose up -d
+cd ..\BackendV2\Llave-Docker
+docker-compose up --build -d
 
 echo.
 echo [2/2] Iniciando servidor del Frontend...
