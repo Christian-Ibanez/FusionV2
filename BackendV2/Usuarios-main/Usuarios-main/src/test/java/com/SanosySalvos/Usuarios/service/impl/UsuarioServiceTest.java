@@ -275,5 +275,97 @@ public class UsuarioServiceTest {
         // Assert
         assertEquals("Usuario registrado, pero el correo de bienvenida se enviará más tarde.", resultado);
     }
+    @Test
+    void crearPerfilVacio_Exito_ConValoresNulosYVacios() {
+        String correo = "vacio@test.com";
+        when(usuarioRepository.existsByCorreoElectronico(correo)).thenReturn(false);
+        Usuario guardado = new Usuario();
+        guardado.setNombreCompleto("Usuario Nuevo");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(guardado);
+        Usuario resultado = usuarioService.crearPerfilVacio(correo, null, "");
+        assertNotNull(resultado);
+        assertEquals("Usuario Nuevo", resultado.getNombreCompleto());
+    }
+
+    @Test
+    void actualizarPerfil_Exito() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setNombreCompleto("Antiguo");
+        usuario.setTelefono("111");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        
+        Usuario resultado = usuarioService.actualizarPerfil(1L, "Nuevo ", "222 ");
+        assertEquals("Nuevo", resultado.getNombreCompleto());
+        assertEquals("222", resultado.getTelefono());
+    }
+
+    @Test
+    void actualizarPerfil_SoloNombreVacio_MantieneOriginal() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setNombreCompleto("Antiguo");
+        usuario.setTelefono("111");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        
+        Usuario resultado = usuarioService.actualizarPerfil(1L, "  ", null);
+        assertEquals("Antiguo", resultado.getNombreCompleto());
+        assertEquals("111", resultado.getTelefono());
+    }
+
+    @Test
+    void actualizarPerfil_Falla_NoEncontrado() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> usuarioService.actualizarPerfil(1L, "N", "1"));
+    }
+
+    @Test
+    void obtenerUsuarioPorId_Exito() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioPrueba));
+        Usuario resultado = usuarioService.obtenerUsuarioPorId(1L);
+        assertNotNull(resultado);
+    }
+
+    @Test
+    void obtenerUsuarioPorId_Falla() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> usuarioService.obtenerUsuarioPorId(1L));
+    }
+
+    @Test
+    void obtenerTodosLosUsuarios_Exito() {
+        when(usuarioRepository.findAll()).thenReturn(List.of(usuarioPrueba));
+        List<Usuario> resultados = usuarioService.obtenerTodosLosUsuarios();
+        assertEquals(1, resultados.size());
+    }
+
+    @Test
+    void actualizarRol_Exito() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioPrueba));
+        when(usuarioRepository.save(any())).thenReturn(usuarioPrueba);
+        Usuario resultado = usuarioService.actualizarRol(1L, RolUsuario.ADMINISTRADOR);
+        assertEquals(RolUsuario.ADMINISTRADOR, resultado.getRol());
+    }
+
+    @Test
+    void actualizarRol_Falla() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> usuarioService.actualizarRol(1L, RolUsuario.ADMINISTRADOR));
+    }
+
+    @Test
+    void eliminarUsuario_Exito() {
+        when(usuarioRepository.existsById(1L)).thenReturn(true);
+        usuarioService.eliminarUsuario(1L);
+        verify(usuarioRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    void eliminarUsuario_Falla() {
+        when(usuarioRepository.existsById(1L)).thenReturn(false);
+        assertThrows(ResponseStatusException.class, () -> usuarioService.eliminarUsuario(1L));
+    }
 
 }

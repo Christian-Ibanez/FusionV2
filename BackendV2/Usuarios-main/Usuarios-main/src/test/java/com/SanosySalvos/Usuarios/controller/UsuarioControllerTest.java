@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 import java.util.Arrays;
 import java.util.List;
@@ -183,4 +184,51 @@ public class UsuarioControllerTest {
         verify(usuarioService, times(1)).crearPerfilVacio(correoMock, nombreMock, telefonoMock);
     }
     
+    @Test
+    void actualizarPerfil_DebeRetornar200() throws Exception {
+        when(usuarioService.actualizarPerfil(eq(1L), anyString(), anyString())).thenReturn(usuarioPrueba);
+        String jsonContent = "{\"nombreCompleto\":\"Nuevo Nombre\", \"telefono\":\"5555555\"}";
+        mockMvc.perform(put("/api/usuarios/1/perfil")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonContent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombreCompleto").value("Juan Perez"));
+    }
+
+    @Test
+    void obtenerUsuarioPorId_DebeRetornar200() throws Exception {
+        when(usuarioService.obtenerUsuarioPorId(1L)).thenReturn(usuarioPrueba);
+        mockMvc.perform(get("/api/usuarios/1")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombreCompleto").value("Juan Perez"));
+    }
+
+    @Test
+    void obtenerTodosLosUsuarios_DebeRetornar200() throws Exception {
+        when(usuarioService.obtenerTodosLosUsuarios()).thenReturn(Arrays.asList(usuarioPrueba));
+        mockMvc.perform(get("/api/usuarios/todos")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
+    }
+
+    @Test
+    void cambiarRol_DebeRetornar200() throws Exception {
+        when(usuarioService.actualizarRol(eq(1L), any(RolUsuario.class))).thenReturn(usuarioPrueba);
+        mockMvc.perform(put("/api/usuarios/1/rol")
+                .param("nuevoRol", "ADMINISTRADOR")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombreCompleto").value("Juan Perez"));
+    }
+
+    @Test
+    void eliminarUsuario_DebeRetornar204() throws Exception {
+        mockMvc.perform(delete("/api/usuarios/1")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+        verify(usuarioService, times(1)).eliminarUsuario(1L);
+    }
+
 }

@@ -45,4 +45,28 @@ public class UsuarioClientTest {
         boolean resultado = usuarioClient.verificarUsuarioFallback(1L, new RuntimeException("Error simulado"));
         assertTrue(resultado);
     }
+
+    @Test
+    void obtenerCorreoUsuario_ConRespuestaValida() {
+        java.util.Map<String, Object> mockResp = new java.util.HashMap<>();
+        mockResp.put("correoElectronico", "test@test.com");
+        when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(mockResp);
+        
+        String resultado = usuarioClient.obtenerCorreoUsuario(1L);
+        assertEquals("test@test.com", resultado);
+    }
+
+    @Test
+    void obtenerCorreoUsuario_ConRespuestaNula_RetornaId() {
+        when(restTemplate.getForObject(anyString(), eq(java.util.Map.class))).thenReturn(null);
+        
+        String resultado = usuarioClient.obtenerCorreoUsuario(1L);
+        assertEquals("1", resultado);
+    }
+
+    @Test
+    void obtenerCorreoUsuarioFallback_DebeRetornarId() {
+        String resultado = usuarioClient.obtenerCorreoUsuarioFallback(1L, new RuntimeException("Simulado"));
+        assertEquals("1", resultado);
+    }
 }

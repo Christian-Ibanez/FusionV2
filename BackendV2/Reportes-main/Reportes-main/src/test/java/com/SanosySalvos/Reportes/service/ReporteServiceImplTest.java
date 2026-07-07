@@ -44,6 +44,9 @@ class ReporteServiceImplTest {
     @Mock
     private NotificacionClient notificacionClient;
 
+    @Mock
+    private HuggingFaceService huggingFaceService;
+
     @InjectMocks
     private ReporteServiceImpl reporteService;
 
@@ -92,6 +95,28 @@ class ReporteServiceImplTest {
         // Verificamos que se llamó a la base de datos y al microservicio de coincidencias
         verify(reporteRepository, times(1)).save(any(Reporte.class));
         verify(coincidenciaClient, times(1)).enviarParaAnalisis(any(AnalisisRequestDTO.class));
+    }
+
+    @Test
+    void crearReporte_ConImagen_GeneraVectorYBuscaCoincidencias() {
+        requestDTO.setUrlImagen("http://imagen.jpg");
+        when(usuarioClient.verificarUsuarioExterno(requestDTO.getUsuarioId())).thenReturn(true);
+        when(huggingFaceService.generarVectorDeImagen("http://imagen.jpg")).thenReturn("[0.5]");
+        
+        Reporte reporteGuardado = new Reporte();
+        reporteGuardado.setId(1L);
+        reporteGuardado.setUsuarioId(10L);
+        reporteGuardado.setTipoReporte(TipoReporte.PERDIDO);
+        reporteGuardado.setVectorImagen("[0.5]");
+        
+        when(reporteRepository.save(any(Reporte.class))).thenReturn(reporteGuardado);
+        when(reporteRepository.buscarCoincidenciasCruzadas(anyString(), anyString(), eq(3))).thenReturn(Collections.emptyList());
+
+        ReporteResponseDTO response = reporteService.crearReporte(requestDTO);
+        assertNotNull(response);
+        verify(huggingFaceService, times(1)).generarVectorDeImagen("http://imagen.jpg");
+        verify(reporteRepository, times(1)).buscarCoincidenciasCruzadas(anyString(), anyString(), eq(3));
+        verify(notificacionClient, times(1)).enviarNotificacion(any());
     }
 
     @Test
@@ -209,5 +234,41 @@ class ReporteServiceImplTest {
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         verify(reporteRepository, never()).save(any(Reporte.class));
+    }
+
+    @Test
+    void marcarComoResuelto_ConMatch_MatchPresente() {
+        when(reporteRepository.findById(1L)).thenReturn(Optional.of(reporteActivo));
+        when(reporteRepository.save(reporteActivo)).thenReturn(reporteActivo);
+
+        Reporte match = new Reporte();
+        match.setId(2L);
+        when(reporteRepository.findById(2L)).thenReturn(Optional.of(match));
+
+        reporteService.marcarComoResuelto(1L, 10L, 2L);
+
+        assertEquals(EstadoReporte.RESUELTO, reporteActivo.getEstado());
+        assertEquals(EstadoReporte.RESUELTO, match.getEstado());
+        verify(reporteRepository, times(1)).save(match);
+    }
+
+    @Test
+    void marcarComoResuelto_ConMatch_MatchAusente() {
+        when(reporteRepository.findById(1L)).thenReturn(Optional.of(reporteActivo));
+        when(reporteRepository.save(reporteActivo)).thenReturn(reporteActivo);
+
+        when(reporteRepository.findById(2L)).thenReturn(Optional.empty());
+
+        reporteService.marcarComoResuelto(1L, 10L, 2L);
+
+        assertEquals(EstadoReporte.RESUELTO, reporteActivo.getEstado());
+        verify(reporteRepository, never()).save(argThat(r -> r.getId() != null && r.getId().equals(2L)));
+    }
+
+    @Test
+    void obtenerTodosLosReportes_Exito() {
+        when(reporteRepository.findAll()).thenReturn(List.of(reporteActivo));
+        List<ReporteResponseDTO> response = reporteService.obtenerTodosLosReportes();
+        assertEquals(1, response.size());
     }
 }

@@ -88,14 +88,22 @@ public class ReporteControllerTest {
     void marcarComoResuelto_DebeRetornar200() throws Exception {
         responseFalsa.setEstado(EstadoReporte.RESUELTO);
         
-        // Simulamos que al llamar al servicio con ID de reporte 10 y ID de usuario 1, responde con éxito
         when(reporteService.marcarComoResuelto(eq(10L), eq(1L), any())).thenReturn(responseFalsa);
 
         mockMvc.perform(put("/api/reportes/10/resolver")
-                .param("usuarioId", "1") // Agregamos el RequestParam
+                .param("usuarioId", "1")
                 .contentType(MediaType.APPLICATION_JSON))
-                
-                .andExpect(status().isOk()) // Esperamos HTTP 200
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("RESUELTO"));
+    }
+
+    @Test
+    void obtenerTodos_DebeRetornar200() throws Exception {
+        when(reporteService.obtenerTodosLosReportes()).thenReturn(List.of(responseFalsa));
+        
+        mockMvc.perform(get("/api/reportes/todos")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 }
