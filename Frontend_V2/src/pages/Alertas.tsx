@@ -3,6 +3,7 @@ import { AlertTriangle, MapPin, Info, Search, Eye, MessageCircle, X } from 'luci
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../AuthContext';
+import { reportesApi } from '../api';
 
 // Fix for default marker icons in Leaflet with bundlers
 try {
@@ -39,6 +40,45 @@ export const Alertas = () => {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    const fetchAlertas = async () => {
+      try {
+        const data = await reportesApi.getActivos();
+        const mappedData = data.map((r: any) => {
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion;
+          if (r.descripcion && r.descripcion.includes('Animal:')) {
+            const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
+            const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
+            const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
+            if (animalMatch) animal = animalMatch[1];
+            if (colorMatch) color = colorMatch[1];
+            if (razaMatch) raza = razaMatch[1];
+            if (notasMatch) notas = notasMatch[1];
+          }
+          return {
+            id: r.id,
+            userId: r.usuarioId,
+            lat: r.latitud,
+            lng: r.longitud,
+            titulo: r.titulo,
+            tipo: r.tipoReporte === 'PERDIDO' ? 'Perdido' : 'Encontrado',
+            descripcion: notas,
+            animal,
+            color,
+            raza,
+            imageBase64: r.urlImagen,
+            estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
+          };
+        });
+        setAlertas(mappedData);
+      } catch (err) {
+        console.error("Error fetching alertas from backend:", err);
+      }
+    };
+    fetchAlertas();
   }, []);
 
   const alertasParaMostrar = alertas.filter((repo) => {
