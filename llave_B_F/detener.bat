@@ -4,13 +4,11 @@ echo   Deteniendo Sistema Sanos y Salvos (FusionV2)
 echo ========================================================
 echo.
 
-echo Apagando contenedores del Backend...
-cd ..\BackendV2\Llave-Docker
+echo Apagando todos los contenedores (Frontend y Backend)...
 docker-compose stop
 
 echo.
 echo ========================================================
-echo Backend detenido correctamente.
-echo (Recuerda cerrar la ventana negra del Frontend manualmente)
+echo Todo el sistema se ha detenido correctamente.
 echo ========================================================
 pause

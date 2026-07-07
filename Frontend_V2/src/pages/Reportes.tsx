@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, MapPin, X, Search, Filter, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map } from 'lucide-react';
+import { FileText, MapPin, X, Search, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../AuthContext';
@@ -25,9 +25,15 @@ const VetIcon = L.divIcon({
 });
 
 const razasPorEspecie: Record<string, string[]> = {
-  'Perro': ['Mestizo', 'Poodle', 'Pastor Alemán', 'Labrador', 'Bulldog', 'Chihuahua', 'Golden Retriever', 'Pitbull', 'Husky', 'Pug', 'Otro'],
-  'Gato': ['Europeo/Mestizo', 'Persa', 'Siamés', 'Angora', 'Maine Coon', 'Bengala', 'Esfinge', 'Otro'],
-  'Conejo': ['Mestizo', 'Cabeza de León', 'Belier', 'Angora', 'Rex', 'Holandés Enano', 'Otro']
+  'Perro': ['Mestizo', 'Poodle', 'Pastor AlemÃ¡n', 'Labrador', 'Bulldog', 'Chihuahua', 'Golden Retriever', 'Pitbull', 'Husky', 'Pug', 'Otro'],
+  'Gato': ['Europeo/Mestizo', 'Persa', 'SiamÃ©s', 'Angora', 'Maine Coon', 'Bengala', 'Esfinge', 'Otro'],
+  'Conejo': ['Mestizo', 'Cabeza de LeÃ³n', 'Belier', 'Angora', 'Rex', 'HolandÃ©s Enano', 'Otro']
+};
+
+const coloresPorEspecie: Record<string, string[]> = {
+  'Perro': ['Negro', 'Blanco', 'MarrÃ³n', 'Dorado', 'Crema', 'Gris', 'Rojo', 'Bicolor', 'Atigrado', 'Merle'],
+  'Gato': ['Blanco', 'Negro', 'Gris', 'Naranja', 'Crema', 'MarrÃ³n', 'Atigrado', 'Carey', 'CalicÃ³', 'Point'],
+  'Conejo': ['Blanco', 'Negro', 'Gris', 'Chinchilla', 'MarrÃ³n', 'Leonado', 'Azul', 'Mariposa', 'ArlequÃ­n']
 };
 
 const MapClickHandler = ({ onLocationSelected }: { onLocationSelected: (lat: number, lng: number) => void }) => {
@@ -67,7 +73,7 @@ export const Reportes = () => {
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEspecie, setFilterEspecie] = useState('Todos');
   
-  // Pestañas para el ciudadano alternar vistas
+  // PestaÃ±as para el ciudadano alternar vistas
   const [activeTab, setActiveTab] = useState<'mis_reportes' | 'todos'>(isAdmin ? 'todos' : 'mis_reportes');
 
   // Address search for Map
@@ -92,12 +98,14 @@ export const Reportes = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<number | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [formError, setFormError] = useState(false);
   const [nuevoReporte, setNuevoReporte] = useState({
     titulo: '',
     tipo: 'Perdido',
     animal: 'Perro',
-    lat: -33.4489,
-    lng: -70.6693,
+    lat: -36.784,
+    lng: -73.055,
     nombre: '',
     color: '',
     raza: 'Mestizo',
@@ -115,8 +123,8 @@ export const Reportes = () => {
       titulo: '',
       tipo: 'Perdido',
       animal: 'Perro',
-      lat: -33.4489,
-      lng: -70.6693,
+      lat: -36.784,
+      lng: -73.055,
       nombre: '',
       color: '',
       raza: 'Mestizo',
@@ -125,6 +133,8 @@ export const Reportes = () => {
       image: null,
       imageBase64: '',
     });
+    setImageError(false);
+    setFormError(false);
   };
 
   const handleSearchAddress = async () => {
@@ -136,19 +146,33 @@ export const Reportes = () => {
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         setNuevoReporte({ ...nuevoReporte, lat: parseFloat(lat), lng: parseFloat(lon) });
-        addNotification({ text: 'Ubicación encontrada en el mapa.', type: 'success' });
+        addNotification({ text: 'UbicaciÃ³n encontrada en el mapa.', type: 'success' });
       } else {
-        addNotification({ text: 'No se encontró la dirección.', type: 'warning' });
+        addNotification({ text: 'No se encontrÃ³ la direcciÃ³n.', type: 'warning' });
       }
     } catch(e) {
       console.error(e);
-      addNotification({ text: 'Error al buscar la ubicación.', type: 'danger' });
+      addNotification({ text: 'Error al buscar la ubicaciÃ³n.', type: 'danger' });
     } finally {
       setIsSearchingMap(false);
     }
   };
 
   const handleSaveReport = async () => {
+    const isPerdido = nuevoReporte.tipo === 'Perdido';
+    const isMissingFields = !nuevoReporte.titulo || !nuevoReporte.color || (isPerdido && (!nuevoReporte.nombre || !nuevoReporte.edad));
+
+    if (isMissingFields) {
+      setFormError(true);
+      return;
+    }
+    setFormError(false);
+
+    if (!nuevoReporte.image && !nuevoReporte.imageBase64) {
+      setImageError(true);
+      return;
+    }
+    setImageError(false);
     if (editingReportId) {
       // Logic for editing (leave as is or mock for now, since no update API is defined)
       const updatedReports = reportesDummy.map(r => {
@@ -190,7 +214,7 @@ export const Reportes = () => {
         };
         
         const response = await reportesApi.crear(payload);
-        addNotification({ text: `¡Reporte creado de manera exitosa!`, type: 'success' });
+        addNotification({ text: `Â¡Reporte creado de manera exitosa!`, type: 'success' });
         
         // Agregar al frontend local para que aparezca en la UI inmediatamente
         const newReportForUI = {
@@ -226,12 +250,12 @@ export const Reportes = () => {
 
   const handleAction = (id: number, action: string) => {
     if (action === 'delete') {
-      if(confirm('¿Estás seguro de que deseas eliminar este reporte?')) {
+      if(confirm('Â¿EstÃ¡s seguro de que deseas eliminar este reporte?')) {
         setReportesDummy(reportesDummy.filter(r => r.id !== id));
         addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
       }
     } else if (action === 'resolve') {
-      const matchIdStr = prompt('¡Qué buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte (déjalo vacío si no aplica):');
+      const matchIdStr = prompt('Â¡QuÃ© buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte (dÃ©jalo vacÃ­o si no aplica):');
       
       const resolverReporte = async () => {
         try {
@@ -248,7 +272,7 @@ export const Reportes = () => {
             return r;
           }));
           
-          addNotification({ text: 'Reporte marcado como resuelto. ¡Felicidades!', type: 'success' });
+          addNotification({ text: 'Reporte marcado como resuelto. Â¡Felicidades!', type: 'success' });
         } catch (e) {
           console.error("Error al resolver:", e);
           addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
@@ -263,8 +287,8 @@ export const Reportes = () => {
           titulo: reportToEdit.titulo || '',
           tipo: reportToEdit.tipo || 'Perdido',
           animal: reportToEdit.animal || reportToEdit.especie || 'Perro',
-          lat: reportToEdit.lat || -33.4489,
-          lng: reportToEdit.lng || -70.6693,
+          lat: reportToEdit.lat || -36.784,
+          lng: reportToEdit.lng || -73.055,
           nombre: reportToEdit.nombre || '',
           color: reportToEdit.color || '',
           raza: reportToEdit.raza || '',
@@ -300,9 +324,9 @@ export const Reportes = () => {
 
   const humanizeLocation = (lat: number, lng: number) => {
     if (!lat || !lng) return 'N/A';
-    const communes = ['Providencia', 'Ñuñoa', 'Santiago Centro', 'Las Condes', 'Maipú', 'La Florida', 'Vitacura', 'Macul'];
+    const communes = ['Concepción', 'Talcahuano', 'Chiguayante', 'San Pedro de la Paz', 'Hualpén', 'Penco', 'Tomé'];
     const idx = Math.floor((Math.abs(lat) + Math.abs(lng)) * 100) % communes.length;
-    return `${communes[idx]}, Región Metropolitana`;
+    return `${communes[idx]}, Región del Biobío`;
   };
 
   return (
@@ -340,7 +364,7 @@ export const Reportes = () => {
           </div>
 
           <div style={{ height: '400px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-            <MapContainer center={[-33.4489, -70.6693]} zoom={11} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+            <MapContainer center={[-36.784, -73.055]} zoom={11} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -348,14 +372,14 @@ export const Reportes = () => {
               {reportesFiltrados.map((repo) => (
                 <Marker 
                   key={repo.id} 
-                  position={[repo.lat || -33.4489, repo.lng || -70.6693]}
+                  position={[repo.lat || -36.784, repo.lng || -73.055]}
                   icon={repo.userRol === 'VETERINARIA' ? VetIcon : new L.Icon.Default()}
                 >
                   <Popup>
                     <strong style={{ color: '#000' }}>{repo.titulo}</strong><br />
                     <span style={{ color: repo.tipo === 'Perdido' || repo.tipo === 'Mascota Perdida' ? 'red' : 'green' }}>{repo.tipo}</span>
                     {repo.userRol === 'VETERINARIA' && (
-                      <div style={{ marginTop: '5px', fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>✓ Alerta Profesional</div>
+                      <div style={{ marginTop: '5px', fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>âœ“ Alerta Profesional</div>
                     )}
                   </Popup>
                 </Marker>
@@ -364,7 +388,7 @@ export const Reportes = () => {
           </div>
         </div>
 
-        {/* Pestañas para el ciudadano / veterinaria */}
+        {/* PestaÃ±as para el ciudadano / veterinaria */}
         {!isAdmin && (
           <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginTop: '1rem' }}>
             <button
@@ -392,10 +416,10 @@ export const Reportes = () => {
           </div>
         )}
 
-        {/* Filtros Globales (Movidos abajo de las pestañas) */}
+        {/* Filtros Globales (Movidos abajo de las pestaÃ±as) */}
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem 1rem 1rem 1rem', borderRadius: '12px', border: '1px solid var(--color-border)', marginTop: isAdmin ? '1rem' : '0' }}>
           <div style={{ position: 'absolute', top: '-10px', left: '1rem', background: 'var(--color-bg)', padding: '0 0.5rem', fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500, borderRadius: '4px' }}>
-            🔍 Filtros Activos (Aplican al Mapa y a la Lista)
+            ðŸ” Filtros Activos (Aplican al Mapa y a la Lista)
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-sidebar)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flex: 2, minWidth: '200px' }}>
             <Search size={18} color="var(--color-text-muted)" />
@@ -469,7 +493,7 @@ export const Reportes = () => {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                         <p style={{ margin: 0 }}><strong>Especie:</strong> {repo.animal || repo.especie || 'N/A'}</p>
                         <p style={{ margin: 0 }}><strong>Raza:</strong> {repo.raza || 'N/A'}</p>
-                        <p style={{ margin: 0 }}><strong>Ubicación:</strong> {humanizeLocation(repo.lat, repo.lng)}</p>
+                        <p style={{ margin: 0 }}><strong>UbicaciÃ³n:</strong> {humanizeLocation(repo.lat, repo.lng)}</p>
                       </div>
                     </div>
                   </div>
@@ -480,7 +504,7 @@ export const Reportes = () => {
         </div>
       </div>
 
-      {/* Modal interactivo de creación/edición con scroll y grids */}
+      {/* Modal interactivo de creaciÃ³n/ediciÃ³n con scroll y grids */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           
@@ -499,8 +523,14 @@ export const Reportes = () => {
             {/* Cuerpo del formulario (con scroll) */}
             <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
               
+              {formError && (
+                <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 500 }}>
+                  Falta informaciÃ³n
+                </div>
+              )}
+
               <div className="form-group">
-                <label className="form-label">Título del reporte</label>
+                <label className="form-label">TÃ­tulo del reporte</label>
                 <input type="text" className="form-input" placeholder="Ej. Perrito blanco perdido en Providencia" value={nuevoReporte.titulo} onChange={(e) => setNuevoReporte({ ...nuevoReporte, titulo: e.target.value })} />
               </div>
 
@@ -517,7 +547,7 @@ export const Reportes = () => {
                   <label className="form-label">Especie</label>
                   <select className="form-input" value={nuevoReporte.animal} onChange={(e) => {
                     const newAnimal = e.target.value;
-                    setNuevoReporte({ ...nuevoReporte, animal: newAnimal, raza: razasPorEspecie[newAnimal][0] });
+                    setNuevoReporte({ ...nuevoReporte, animal: newAnimal, raza: razasPorEspecie[newAnimal][0], color: '', edad: '' });
                   }}>
                     <option value="Perro">Perro</option>
                     <option value="Gato">Gato</option>
@@ -526,7 +556,7 @@ export const Reportes = () => {
                 </div>
               </div>
 
-              {/* Grid 2 columnas: Nombre y Edad (solo si se perdió) */}
+              {/* Grid 2 columnas: Nombre y Edad (solo si se perdiÃ³) */}
               {nuevoReporte.tipo === 'Perdido' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
@@ -534,8 +564,30 @@ export const Reportes = () => {
                     <input type="text" className="form-input" placeholder="Ej. Toby" value={nuevoReporte.nombre} onChange={(e) => setNuevoReporte({ ...nuevoReporte, nombre: e.target.value })} />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Edad (años)</label>
-                    <input type="number" className="form-input" min="0" placeholder="Ej. 3" value={nuevoReporte.edad} onChange={(e) => setNuevoReporte({ ...nuevoReporte, edad: e.target.value })} />
+                    <label className="form-label">Edad (aÃ±os)</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      min="1" 
+                      max={nuevoReporte.animal === 'Gato' ? 40 : nuevoReporte.animal === 'Conejo' ? 20 : 35} 
+                      placeholder="Ej. 3" 
+                      value={nuevoReporte.edad} 
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        const maxAge = nuevoReporte.animal === 'Gato' ? 40 : nuevoReporte.animal === 'Conejo' ? 20 : 35;
+                        if (val !== '') {
+                          const num = parseInt(val);
+                          if (!isNaN(num)) {
+                            if (num > maxAge) val = maxAge.toString();
+                            else if (num < 1) val = '1';
+                            else val = num.toString();
+                          } else {
+                            val = '';
+                          }
+                        }
+                        setNuevoReporte({ ...nuevoReporte, edad: val });
+                      }} 
+                    />
                   </div>
                 </div>
               )}
@@ -544,7 +596,19 @@ export const Reportes = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Color predominante</label>
-                  <input type="text" className="form-input" placeholder="Ej. Blanco con manchas negras" value={nuevoReporte.color} onChange={(e) => setNuevoReporte({ ...nuevoReporte, color: e.target.value })} />
+                  <select 
+                    className="form-input" 
+                    value={nuevoReporte.color} 
+                    onChange={(e) => setNuevoReporte({ ...nuevoReporte, color: e.target.value })}
+                  >
+                    <option value="">Selecciona un color</option>
+                    {(coloresPorEspecie[nuevoReporte.animal] || coloresPorEspecie['Perro']).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    {!((coloresPorEspecie[nuevoReporte.animal] || coloresPorEspecie['Perro']).includes(nuevoReporte.color)) && nuevoReporte.color && (
+                      <option value={nuevoReporte.color}>{nuevoReporte.color} (Original)</option>
+                    )}
+                  </select>
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Raza</label>
@@ -563,12 +627,12 @@ export const Reportes = () => {
                 </div>
               </div>
 
-              {/* Campo de Descripción Opcional */}
+              {/* Campo de DescripciÃ³n Opcional */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label className="form-label">Descripción adicional (Opcional)</label>
+                <label className="form-label">DescripciÃ³n adicional (Opcional)</label>
                 <textarea 
                   className="form-input" 
-                  placeholder="Ej. Tenía un collar rojo, es muy asustadizo, tiene una mancha en la oreja..." 
+                  placeholder="Ej. TenÃ­a un collar rojo, es muy asustadizo, tiene una mancha en la oreja..." 
                   value={nuevoReporte.descripcion} 
                   onChange={(e) => setNuevoReporte({ ...nuevoReporte, descripcion: e.target.value })}
                   style={{ minHeight: '80px', resize: 'vertical' }}
@@ -577,7 +641,7 @@ export const Reportes = () => {
 
               {/* Zona de subida de imagen estilizada (Drag & Drop look) */}
               <div className="form-group">
-                <label className="form-label">Fotografía</label>
+                <label className="form-label">FotografÃ­a</label>
                 <label 
                   style={{ 
                     display: 'flex', 
@@ -598,7 +662,7 @@ export const Reportes = () => {
                     Sube una foto de la mascota
                   </span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                    {nuevoReporte.image ? <span style={{color: 'var(--color-success)'}}>Seleccionado: {nuevoReporte.image.name}</span> : 'PNG, JPG o JPEG (Máx. 5MB)'}
+                    {nuevoReporte.image ? <span style={{color: 'var(--color-success)'}}>Seleccionado: {nuevoReporte.image.name}</span> : 'PNG, JPG o JPEG (MÃ¡x. 5MB)'}
                   </span>
                   
                   <div className="btn" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.5rem 1rem' }}>
@@ -620,16 +684,22 @@ export const Reportes = () => {
                       } else {
                         setNuevoReporte({ ...nuevoReporte, image: null, imageBase64: '' });
                       }
+                      if (file) setImageError(false);
                     }} 
                   />
                 </label>
+                {imageError && (
+                  <div style={{ color: 'var(--color-danger)', fontSize: '0.9rem', marginTop: '0.5rem', textAlign: 'center', fontWeight: 500 }}>
+                    Debe subir una imagen del animal
+                  </div>
+                )}
               </div>
 
-              {/* Sección del Mapa con Autocompletado */}
+              {/* SecciÃ³n del Mapa con Autocompletado */}
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Ubicación del suceso</label>
+                <label className="form-label">UbicaciÃ³n del suceso</label>
                 
-                {/* Input de Búsqueda de Ubicación */}
+                {/* Input de BÃºsqueda de UbicaciÃ³n */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-sidebar)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flex: 1 }}>
                     <Map size={18} color="var(--color-text-muted)" />
@@ -648,9 +718,9 @@ export const Reportes = () => {
                 </div>
 
                 <div style={{ height: '300px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-                  <MapContainer center={[nuevoReporte.lat || -33.4489, nuevoReporte.lng || -70.6693]} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+                  <MapContainer center={[nuevoReporte.lat || -36.784, nuevoReporte.lng || -73.055]} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapUpdater lat={nuevoReporte.lat || -33.4489} lng={nuevoReporte.lng || -70.6693} />
+                    <MapUpdater lat={nuevoReporte.lat || -36.784} lng={nuevoReporte.lng || -73.055} />
                     <MapClickHandler onLocationSelected={(lat, lng) => setNuevoReporte({ ...nuevoReporte, lat, lng })} />
                     {nuevoReporte.lat && nuevoReporte.lng && (
                       <>
@@ -661,7 +731,7 @@ export const Reportes = () => {
                   </MapContainer>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                  * Puedes hacer clic directamente en el mapa para ajustar con precisión la ubicación donde viste o perdiste a la mascota. El círculo indica el área de influencia del reporte.
+                  * Puedes hacer clic directamente en el mapa para ajustar con precisiÃ³n la ubicaciÃ³n donde viste o perdiste a la mascota. El cÃ­rculo indica el Ã¡rea de influencia del reporte.
                 </p>
               </div>
             </div>

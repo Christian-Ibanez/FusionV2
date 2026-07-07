@@ -2,8 +2,8 @@ import { Users, FileText, Activity, AlertCircle, Clock, MapPin, TrendingUp, Tren
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
-import { userApi, reportesApi, coincidenciasApi, type User } from '../api';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { userApi, reportesApi, coincidenciasApi } from '../api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
 // Fix for default marker icons in Leaflet with bundlers
@@ -26,13 +26,13 @@ const VetIcon = L.divIcon({
 });
 
 
-export const Overview = ({ menuItems }: { menuItems: any[] }) => {
+export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
   const navigate = useNavigate();
   const { user, notifications, removeNotification, addNotification } = useAuth();
   const isAdmin = user?.rol === 'ADMINISTRADOR';
   const isVet = user?.rol === 'VETERINARIA';
 
-  const [usersList, setUsersList] = useState<User[]>([]);
+
   const [coincidenciasList, setCoincidenciasList] = useState<any[]>([]);
   const [alertasList, setAlertasList] = useState<any[]>([]);
   const [auditLog, setAuditLog] = useState<any[]>([]);
@@ -45,7 +45,7 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
     refugioReunidos: 0,
   });
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [locationBlocked, setLocationBlocked] = useState(true);
+  const [locationBlocked] = useState(true);
   const [acceptingIncomes, setAcceptingIncomes] = useState(true);
   const [selectedMatchImage, setSelectedMatchImage] = useState<string | null>(null);
   const isRefugio = user?.rol === 'REFUGIO';
@@ -64,14 +64,12 @@ export const Overview = ({ menuItems }: { menuItems: any[] }) => {
           reportesApi.getActivos()
         ]);
         
-        const alertasMascotaPerdida = activos.filter((r: any) => 
-          r.tipoReporte === 'PERDIDO' || r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida'
-        );
+
 
         const localReportesStr = localStorage.getItem('app_reportes_v2');
         const localReportes = localReportesStr ? JSON.parse(localReportesStr) : [];
         const localActivos = localReportes.filter((r: any) => r.estado === 'Activo');
-        const localAlertasMascotaPerdida = localActivos.filter((r: any) => r.tipo === 'Perdido' || r.tipo === 'Mascota Perdida');
+
 
         const combinedActivosRaw = [...activos, ...localActivos];
         // Deduplicar por ID (los locales y los del backend pueden solaparse)

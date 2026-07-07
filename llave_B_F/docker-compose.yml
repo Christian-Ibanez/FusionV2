@@ -62,7 +62,7 @@ services:
 
   db_reportes:
     build:
-      context: ../Reportes-main/Reportes-main
+      context: ../BackendV2/Reportes-main/Reportes-main
       dockerfile: Dockerfile.db
     container_name: db_reportes
     environment:
@@ -112,7 +112,7 @@ services:
   # BFF Gateway
   bff-gateway:
     build:
-      context: ../BFF-Gateway
+      context: ../BackendV2/BFF-Gateway
       dockerfile: Dockerfile
     container_name: bff-gateway
     ports:
@@ -135,7 +135,7 @@ services:
   # Usuarios
   usuarios:
     build:
-      context: ../Usuarios-main/Usuarios-main
+      context: ../BackendV2/Usuarios-main/Usuarios-main
       dockerfile: Dockerfile
     container_name: usuarios
     ports:
@@ -156,7 +156,7 @@ services:
   # Mascotas
   mascotas:
     build:
-      context: ../Mascotas/Mascotas
+      context: ../BackendV2/Mascotas/Mascotas
       dockerfile: Dockerfile
     container_name: mascotas
     ports:
@@ -176,7 +176,7 @@ services:
   # Geolocalizacion
   geolocalizacion:
     build:
-      context: ../Geolocalizacion/Geolocalizacion
+      context: ../BackendV2/Geolocalizacion/Geolocalizacion
       dockerfile: Dockerfile
     container_name: geolocalizacion
     ports:
@@ -197,7 +197,7 @@ services:
   # Notificaciones
   notificaciones:
     build:
-      context: ../Notificaciones/Notificaciones
+      context: ../BackendV2/Notificaciones/Notificaciones
       dockerfile: Dockerfile
     container_name: notificaciones
     ports:
@@ -217,7 +217,7 @@ services:
   # Reportes
   reportes:
     build:
-      context: ../Reportes-main/Reportes-main
+      context: ../BackendV2/Reportes-main/Reportes-main
       dockerfile: Dockerfile
     container_name: reportes
     dns:
@@ -240,13 +240,13 @@ services:
     depends_on:
       - db_reportes
     volumes:
-      - "./img:/app/imagenes_prueba"
+      - "../BackendV2/Llave-Docker/img:/app/imagenes_prueba"
     restart: unless-stopped
 
   # Coincidencias
   coincidencias:
     build:
-      context: ../Coincidencias-main/Coincidencias-main
+      context: ../BackendV2/Coincidencias-main/Coincidencias-main
       dockerfile: Dockerfile
     container_name: coincidencias
     ports:
@@ -268,7 +268,7 @@ services:
   # Identificacion-Acceso
   identificacion-acceso:
     build:
-      context: ../IdentificacioAcceso/IdentificacioAcceso/IdentificacioAcceso
+      context: ../BackendV2/IdentificacioAcceso/IdentificacioAcceso/IdentificacioAcceso
       dockerfile: Dockerfile
     container_name: identificacion-acceso
     ports:
@@ -289,15 +289,18 @@ services:
   # Frontend
   frontend:
     build:
-      context: ../../Frontend_V2
+      context: ../Frontend_V2
       dockerfile: Dockerfile
     container_name: frontend-v2
     ports:
-      - "8080:80"
+      - "8080:5173"
     networks:
       - fusion-network
     depends_on:
       - bff-gateway
+    volumes:
+      - ../Frontend_V2:/app
+      - /app/node_modules
     restart: unless-stopped
 
 networks:
