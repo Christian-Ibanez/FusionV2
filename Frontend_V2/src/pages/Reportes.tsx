@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, MapPin, X, Search, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, MapPin, X, Search, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../AuthContext';
@@ -144,13 +144,8 @@ export const Reportes = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<number | null>(null);
-  const [formError, setFormError] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
-  // Custom modals state
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [resolvePromptId, setResolvePromptId] = useState<number | null>(null);
-  const [resolveMatchId, setResolveMatchId] = useState<string>('');
+  const [formError, setFormError] = useState(false);
   const [nuevoReporte, setNuevoReporte] = useState({
     titulo: '',
     tipo: 'Perdido',
@@ -339,10 +334,36 @@ export const Reportes = () => {
 
   const handleAction = (id: number, action: string) => {
     if (action === 'delete') {
-      setDeleteConfirmId(id);
+      if(confirm('¿Estás seguro de que deseas eliminar este reporte?')) {
+        setReportesDummy(reportesDummy.filter(r => r.id !== id));
+        addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
+      }
     } else if (action === 'resolve') {
-      setResolvePromptId(id);
-      setResolveMatchId('');
+      const matchIdStr = prompt('¡Qué buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte (déjalo vacío si no aplica):');
+      
+      const resolverReporte = async () => {
+        try {
+          const matchId = matchIdStr ? parseInt(matchIdStr) : undefined;
+          
+          if (user?.id) {
+            await reportesApi.resolver(id, user.id, matchId);
+          }
+          
+          setReportesDummy(reportesDummy.map(r => {
+            if (String(r.id) === String(id) || (matchId && String(r.id) === String(matchId))) {
+              return { ...r, estado: 'Resuelto' };
+            }
+            return r;
+          }));
+          
+          addNotification({ text: 'Reporte marcado como resuelto. Â¡Felicidades!', type: 'success' });
+        } catch (e) {
+          console.error("Error al resolver:", e);
+          addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
+        }
+      };
+      
+      resolverReporte();
     } else if (action === 'edit') {
       const reportToEdit = reportesDummy.find(r => r.id === id);
       if (reportToEdit) {
@@ -363,39 +384,6 @@ export const Reportes = () => {
         setEditingReportId(id);
         setIsModalOpen(true);
       }
-    }
-  };
-
-  const confirmDelete = () => {
-    if (deleteConfirmId !== null) {
-      setReportesDummy(reportesDummy.filter(r => r.id !== deleteConfirmId));
-      addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
-      setDeleteConfirmId(null);
-    }
-  };
-
-  const confirmResolve = async () => {
-    if (resolvePromptId !== null) {
-      try {
-        const matchId = resolveMatchId ? parseInt(resolveMatchId) : undefined;
-        
-        if (user?.id) {
-          await reportesApi.resolver(resolvePromptId, user.id, matchId);
-        }
-        
-        setReportesDummy(reportesDummy.map(r => {
-          if (String(r.id) === String(resolvePromptId) || (matchId && String(r.id) === String(matchId))) {
-            return { ...r, estado: 'Resuelto' };
-          }
-          return r;
-        }));
-        
-        addNotification({ text: 'Reporte marcado como resuelto. ¡Felicidades!', type: 'success' });
-      } catch (e) {
-        console.error("Error al resolver:", e);
-        addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
-      }
-      setResolvePromptId(null);
     }
   };
 
@@ -844,59 +832,6 @@ export const Reportes = () => {
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirmId !== null && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
-          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <AlertCircle size={28} color="var(--color-danger)" />
-              <h3 style={{ margin: 0, color: '#fff' }}>Eliminar Reporte</h3>
-            </div>
-            <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)' }}>
-              ¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.
-            </div>
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', background: 'rgba(0,0,0,0.2)' }}>
-              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setDeleteConfirmId(null)}>
-                Cancelar
-              </button>
-              <button className="btn" style={{ background: 'var(--color-danger)', border: 'none', color: '#fff' }} onClick={confirmDelete}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal para Resolver Reporte */}
-      {resolvePromptId !== null && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
-          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '450px', display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <CheckCircle size={28} color="var(--color-success)" />
-              <h3 style={{ margin: 0, color: '#fff' }}>¡Reporte Resuelto!</h3>
-            </div>
-            <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)' }}>
-              <p style={{ margin: '0 0 1rem 0' }}>¡Qué buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte abajo (déjalo vacío si no aplica):</p>
-              <input 
-                type="number" 
-                className="form-input" 
-                placeholder="ID del reporte coincidente (opcional)" 
-                value={resolveMatchId} 
-                onChange={(e) => setResolveMatchId(e.target.value)}
-              />
-            </div>
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', background: 'rgba(0,0,0,0.2)' }}>
-              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setResolvePromptId(null)}>
-                Cancelar
-              </button>
-              <button className="btn btn-primary" onClick={confirmResolve}>
-                Marcar como Resuelto
-              </button>
-            </div>
           </div>
         </div>
       )}
