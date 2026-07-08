@@ -14,6 +14,8 @@
 	<name>bff-gateway</name>
 	<description>Backend for Frontend Gateway para Sanos y Salvos</description>
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
 		<spring-cloud.version>2023.0.1</spring-cloud.version>
 	</properties>

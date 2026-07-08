@@ -47,7 +47,7 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [locationBlocked] = useState(true);
   const [acceptingIncomes, setAcceptingIncomes] = useState(true);
-  const [selectedMatchImage, setSelectedMatchImage] = useState<string | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
   const isRefugio = user?.rol === 'REFUGIO';
 
   useEffect(() => {
@@ -67,15 +67,19 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
 
 
         const mappedActivos = activos.map((r: any) => {
-          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion;
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion, nombre = '', edad = '';
           if (r.descripcion && r.descripcion.includes('Animal:')) {
             const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
             const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
             const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const nombreMatch = r.descripcion.match(/Nombre:\s([^.]+)\./);
+            const edadMatch = r.descripcion.match(/Edad:\s([^.]+)\./);
             const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
             if (animalMatch) animal = animalMatch[1];
             if (colorMatch) color = colorMatch[1];
             if (razaMatch) raza = razaMatch[1];
+            if (nombreMatch) nombre = nombreMatch[1];
+            if (edadMatch) edad = edadMatch[1];
             if (notasMatch) notas = notasMatch[1];
           }
           return {
@@ -89,6 +93,8 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
             animal,
             color,
             raza,
+            nombre,
+            edad,
             imageBase64: r.urlImagen,
             estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
           };
@@ -97,10 +103,6 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
         const localReportesStr = localStorage.getItem('app_reportes_v2');
         const localReportes = localReportesStr ? JSON.parse(localReportesStr) : [];
         const localActivos = localReportes.filter((r: any) => r.estado === 'Activo');
-<<<<<<< HEAD
-
-=======
->>>>>>> 97497dc278ee575468a7ccd3499c3bbae9b0401e
 
         const combinedActivosRaw = [...mappedActivos, ...localActivos];
         // Deduplicar por ID (los locales y los del backend pueden solaparse)
@@ -196,7 +198,8 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
                   fechaCreacion: m.fechaCalculo,
                   reporteMio: reporte.id,
                   reporteMatch: matchId,
-                  matchImageBase64: matchReporte ? (matchReporte.urlImagen || matchReporte.imageBase64) : null
+                  matchImageBase64: matchReporte ? (matchReporte.urlImagen || matchReporte.imageBase64) : null,
+                  miImageBase64: reporte.urlImagen || reporte.imageBase64
                 };
               })];
             } catch (err) {
@@ -536,7 +539,7 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
                         ¡Atención! Alguien reportó una mascota muy parecida a tu caso <strong>#{c.reporteMio || '...'}</strong>.
                       </p>
                       <button 
-                        onClick={() => setSelectedMatchImage(c.matchImageBase64 || 'default')}
+                        onClick={() => setSelectedMatch(c)}
                         className="btn btn-primary" 
                         style={{ background: 'var(--color-primary)', border: 'none', padding: '0.6rem', fontSize: '0.9rem', width: '100%', display: 'flex', justifyContent: 'center', fontWeight: 'bold' }}>
                         Ver foto del caso #{c.reporteMatch || '...'}
@@ -609,31 +612,56 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
         </>
       )}
 
-      {/* Modal para ver foto de la coincidencia */}
-      {selectedMatchImage && (
+      {/* Modal para ver fotos de la coincidencia */}
+      {selectedMatch && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: '12px' }}>
+          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: '12px' }}>
             <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: '#fff' }}>Foto del Caso Coincidente</h3>
-              <button onClick={() => setSelectedMatchImage(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>Comparación de Casos</h3>
+              <button onClick={() => setSelectedMatch(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0.2rem' }}>
                 <X size={24} />
               </button>
             </div>
-            <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
-              {selectedMatchImage === 'default' ? (
-                <div style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '3rem 0' }}>
-                  <AlertCircle size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-                  <p>Imagen no disponible o no fue encontrada para este reporte.</p>
-                </div>
-              ) : (
-                <img src={selectedMatchImage} alt="Coincidencia" style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '8px', objectFit: 'contain' }} />
-              )}
+            
+            <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'rgba(0,0,0,0.3)' }}>
+              {/* Tu caso */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <h4 style={{ margin: 0, color: 'var(--color-primary)' }}>Tu Reporte #{selectedMatch.reporteMio}</h4>
+                {selectedMatch.miImageBase64 ? (
+                  <img src={selectedMatch.miImageBase64} alt="Tu mascota" style={{ width: '100%', height: '300px', borderRadius: '8px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border)', borderRadius: '8px' }}>
+                    <AlertCircle size={40} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>Sin foto</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Posible coincidencia */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <h4 style={{ margin: 0, color: 'var(--color-warning)' }}>Posible Match #{selectedMatch.reporteMatch}</h4>
+                {selectedMatch.matchImageBase64 ? (
+                  <img src={selectedMatch.matchImageBase64} alt="Coincidencia" style={{ width: '100%', height: '300px', borderRadius: '8px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border)', borderRadius: '8px' }}>
+                    <AlertCircle size={40} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>Sin foto</p>
+                  </div>
+                )}
+              </div>
             </div>
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '0.5rem 1.5rem', borderRadius: '20px', fontWeight: 'bold' }}>
+                    Similitud detectada: {selectedMatch.porcentajeSimilitud}%
+                </div>
+            </div>
+
             <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setSelectedMatchImage(null)}>
+              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setSelectedMatch(null)}>
                 Cerrar
               </button>
-              <button className="btn btn-primary" onClick={() => { setSelectedMatchImage(null); navigate('/dashboard/alertas'); }}>
+              <button className="btn btn-primary" onClick={() => { setSelectedMatch(null); navigate('/dashboard/alertas'); }}>
                 Ver Detalles en Alertas
               </button>
             </div>

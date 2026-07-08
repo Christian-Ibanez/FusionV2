@@ -47,15 +47,19 @@ export const Alertas = () => {
       try {
         const data = await reportesApi.getActivos();
         const mappedData = data.map((r: any) => {
-          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion;
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion, nombre = '', edad = '';
           if (r.descripcion && r.descripcion.includes('Animal:')) {
             const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
             const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
             const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const nombreMatch = r.descripcion.match(/Nombre:\s([^.]+)\./);
+            const edadMatch = r.descripcion.match(/Edad:\s([^.]+)\./);
             const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
             if (animalMatch) animal = animalMatch[1];
             if (colorMatch) color = colorMatch[1];
             if (razaMatch) raza = razaMatch[1];
+            if (nombreMatch) nombre = nombreMatch[1];
+            if (edadMatch) edad = edadMatch[1];
             if (notasMatch) notas = notasMatch[1];
           }
           return {
@@ -69,6 +73,8 @@ export const Alertas = () => {
             animal,
             color,
             raza,
+            nombre,
+            edad,
             imageBase64: r.urlImagen,
             estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
           };

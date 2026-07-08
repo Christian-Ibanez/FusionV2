@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, MapPin, X, Search, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map } from 'lucide-react';
+import { FileText, MapPin, X, Search, Eye, Edit, Trash2, Check, List, User, UploadCloud, Map, AlertCircle, CheckCircle } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../AuthContext';
@@ -69,7 +69,7 @@ export const Reportes = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState('Todos');
+  const [filterEstado, setFilterEstado] = useState('Activo');
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEspecie, setFilterEspecie] = useState('Todos');
   
@@ -101,15 +101,19 @@ export const Reportes = () => {
       try {
         const data = await reportesApi.getTodos();
         const mappedData = data.map((r: any) => {
-          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion;
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion, nombre = '', edad = '';
           if (r.descripcion && r.descripcion.includes('Animal:')) {
             const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
             const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
             const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const nombreMatch = r.descripcion.match(/Nombre:\s([^.]+)\./);
+            const edadMatch = r.descripcion.match(/Edad:\s([^.]+)\./);
             const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
             if (animalMatch) animal = animalMatch[1];
             if (colorMatch) color = colorMatch[1];
             if (razaMatch) raza = razaMatch[1];
+            if (nombreMatch) nombre = nombreMatch[1];
+            if (edadMatch) edad = edadMatch[1];
             if (notasMatch) notas = notasMatch[1];
           }
           return {
@@ -123,6 +127,8 @@ export const Reportes = () => {
             animal,
             color,
             raza,
+            nombre,
+            edad,
             imageBase64: r.urlImagen,
             estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
           };
@@ -138,8 +144,13 @@ export const Reportes = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<number | null>(null);
-  const [imageError, setImageError] = useState(false);
   const [formError, setFormError] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  // Custom modals state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [resolvePromptId, setResolvePromptId] = useState<number | null>(null);
+  const [resolveMatchId, setResolveMatchId] = useState<string>('');
   const [nuevoReporte, setNuevoReporte] = useState({
     titulo: '',
     tipo: 'Perdido',
@@ -241,11 +252,14 @@ export const Reportes = () => {
     } else {
       // CONNECTED TO BACKEND
       try {
+        const nombreStr = (nuevoReporte.tipo === 'Perdido' && nuevoReporte.nombre) ? ` Nombre: ${nuevoReporte.nombre}.` : '';
+        const edadStr = (nuevoReporte.tipo === 'Perdido' && nuevoReporte.edad) ? ` Edad: ${nuevoReporte.edad}.` : '';
+
         const payload = {
           usuarioId: user?.id,
           tipoReporte: nuevoReporte.tipo === 'Perdido' ? 'PERDIDO' : 'ENCONTRADO',
           titulo: nuevoReporte.titulo || (nuevoReporte.tipo === 'Perdido' ? 'Mascota Perdida' : 'Mascota Encontrada'),
-          descripcion: `Animal: ${nuevoReporte.animal}. Color: ${nuevoReporte.color}. Raza: ${nuevoReporte.raza}.${nuevoReporte.descripcion ? ' Notas adicionales: ' + nuevoReporte.descripcion : ''}`,
+          descripcion: `Animal: ${nuevoReporte.animal}. Color: ${nuevoReporte.color}. Raza: ${nuevoReporte.raza}.${nombreStr}${edadStr}${nuevoReporte.descripcion ? ' Notas adicionales: ' + nuevoReporte.descripcion : ''}`,
           estado: 'ACTIVO',
           latitud: nuevoReporte.lat,
           longitud: nuevoReporte.lng,
@@ -278,8 +292,43 @@ export const Reportes = () => {
         localStorage.setItem('app_reportes_v2', JSON.stringify(updatedLocal));
         setReportesDummy(updatedLocal);
         
-        // Reload page to fetch real data
-        setTimeout(() => window.location.reload(), 1000);
+        // Obtenemos los datos reales en tiempo real
+        const data = await reportesApi.getTodos();
+        const mappedData = data.map((r: any) => {
+          let animal = 'Perro', color = '', raza = 'Mestizo', notas = r.descripcion, nombre = '', edad = '';
+          if (r.descripcion && r.descripcion.includes('Animal:')) {
+            const animalMatch = r.descripcion.match(/Animal:\s([^.]+)\./);
+            const colorMatch = r.descripcion.match(/Color:\s([^.]+)\./);
+            const razaMatch = r.descripcion.match(/Raza:\s([^.]+)\./);
+            const nombreMatch = r.descripcion.match(/Nombre:\s([^.]+)\./);
+            const edadMatch = r.descripcion.match(/Edad:\s([^.]+)\./);
+            const notasMatch = r.descripcion.match(/Notas adicionales:\s(.*)/);
+            if (animalMatch) animal = animalMatch[1];
+            if (colorMatch) color = colorMatch[1];
+            if (razaMatch) raza = razaMatch[1];
+            if (nombreMatch) nombre = nombreMatch[1];
+            if (edadMatch) edad = edadMatch[1];
+            if (notasMatch) notas = notasMatch[1];
+          }
+          return {
+            id: r.id,
+            userId: r.usuarioId,
+            lat: r.latitud,
+            lng: r.longitud,
+            titulo: r.titulo,
+            tipo: r.tipoReporte === 'PERDIDO' ? 'Perdido' : 'Encontrado',
+            descripcion: notas,
+            animal,
+            color,
+            raza,
+            nombre,
+            edad,
+            imageBase64: r.urlImagen,
+            estado: r.estado === 'ACTIVO' ? 'Activo' : 'Resuelto'
+          };
+        });
+        setReportesDummy(mappedData);
+        localStorage.setItem('app_reportes_v2', JSON.stringify(mappedData));
       } catch (err) {
         console.error("Error creating report:", err);
         addNotification({ text: `Error al publicar en el servidor`, type: 'danger' });
@@ -290,36 +339,10 @@ export const Reportes = () => {
 
   const handleAction = (id: number, action: string) => {
     if (action === 'delete') {
-      if(confirm('Â¿EstÃ¡s seguro de que deseas eliminar este reporte?')) {
-        setReportesDummy(reportesDummy.filter(r => r.id !== id));
-        addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
-      }
+      setDeleteConfirmId(id);
     } else if (action === 'resolve') {
-      const matchIdStr = prompt('Â¡QuÃ© buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte (dÃ©jalo vacÃ­o si no aplica):');
-      
-      const resolverReporte = async () => {
-        try {
-          const matchId = matchIdStr ? parseInt(matchIdStr) : undefined;
-          
-          if (user?.id) {
-            await reportesApi.resolver(id, user.id, matchId);
-          }
-          
-          setReportesDummy(reportesDummy.map(r => {
-            if (String(r.id) === String(id) || (matchId && String(r.id) === String(matchId))) {
-              return { ...r, estado: 'Resuelto' };
-            }
-            return r;
-          }));
-          
-          addNotification({ text: 'Reporte marcado como resuelto. Â¡Felicidades!', type: 'success' });
-        } catch (e) {
-          console.error("Error al resolver:", e);
-          addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
-        }
-      };
-      
-      resolverReporte();
+      setResolvePromptId(id);
+      setResolveMatchId('');
     } else if (action === 'edit') {
       const reportToEdit = reportesDummy.find(r => r.id === id);
       if (reportToEdit) {
@@ -340,6 +363,39 @@ export const Reportes = () => {
         setEditingReportId(id);
         setIsModalOpen(true);
       }
+    }
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId !== null) {
+      setReportesDummy(reportesDummy.filter(r => r.id !== deleteConfirmId));
+      addNotification({ text: 'Reporte eliminado correctamente.', type: 'info' });
+      setDeleteConfirmId(null);
+    }
+  };
+
+  const confirmResolve = async () => {
+    if (resolvePromptId !== null) {
+      try {
+        const matchId = resolveMatchId ? parseInt(resolveMatchId) : undefined;
+        
+        if (user?.id) {
+          await reportesApi.resolver(resolvePromptId, user.id, matchId);
+        }
+        
+        setReportesDummy(reportesDummy.map(r => {
+          if (String(r.id) === String(resolvePromptId) || (matchId && String(r.id) === String(matchId))) {
+            return { ...r, estado: 'Resuelto' };
+          }
+          return r;
+        }));
+        
+        addNotification({ text: 'Reporte marcado como resuelto. ¡Felicidades!', type: 'success' });
+      } catch (e) {
+        console.error("Error al resolver:", e);
+        addNotification({ text: 'Error al marcar como resuelto en el servidor.', type: 'danger' });
+      }
+      setResolvePromptId(null);
     }
   };
 
@@ -533,7 +589,9 @@ export const Reportes = () => {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                         <p style={{ margin: 0 }}><strong>Especie:</strong> {repo.animal || repo.especie || 'N/A'}</p>
                         <p style={{ margin: 0 }}><strong>Raza:</strong> {repo.raza || 'N/A'}</p>
-                        <p style={{ margin: 0 }}><strong>UbicaciÃ³n:</strong> {humanizeLocation(repo.lat, repo.lng)}</p>
+                        {repo.nombre && <p style={{ margin: 0 }}><strong>Nombre:</strong> {repo.nombre}</p>}
+                        {repo.edad && <p style={{ margin: 0 }}><strong>Edad:</strong> {repo.edad}</p>}
+                        <p style={{ margin: 0 }}><strong>Ubicación:</strong> {humanizeLocation(repo.lat, repo.lng)}</p>
                       </div>
                     </div>
                   </div>
@@ -786,6 +844,59 @@ export const Reportes = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {deleteConfirmId !== null && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <AlertCircle size={28} color="var(--color-danger)" />
+              <h3 style={{ margin: 0, color: '#fff' }}>Eliminar Reporte</h3>
+            </div>
+            <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)' }}>
+              ¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', background: 'rgba(0,0,0,0.2)' }}>
+              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setDeleteConfirmId(null)}>
+                Cancelar
+              </button>
+              <button className="btn" style={{ background: 'var(--color-danger)', border: 'none', color: '#fff' }} onClick={confirmDelete}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Resolver Reporte */}
+      {resolvePromptId !== null && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+          <div className="surface animate-fade-in" style={{ width: '100%', maxWidth: '450px', display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <CheckCircle size={28} color="var(--color-success)" />
+              <h3 style={{ margin: 0, color: '#fff' }}>¡Reporte Resuelto!</h3>
+            </div>
+            <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)' }}>
+              <p style={{ margin: '0 0 1rem 0' }}>¡Qué buena noticia! Si encontraste a la mascota gracias a otro reporte en la app, ingresa el ID de ese reporte abajo (déjalo vacío si no aplica):</p>
+              <input 
+                type="number" 
+                className="form-input" 
+                placeholder="ID del reporte coincidente (opcional)" 
+                value={resolveMatchId} 
+                onChange={(e) => setResolveMatchId(e.target.value)}
+              />
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', background: 'rgba(0,0,0,0.2)' }}>
+              <button className="btn" style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={() => setResolvePromptId(null)}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary" onClick={confirmResolve}>
+                Marcar como Resuelto
+              </button>
+            </div>
           </div>
         </div>
       )}

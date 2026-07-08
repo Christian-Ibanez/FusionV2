@@ -96,7 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token && user?.correoElectronico) {
         try {
           const freshUser = await userApi.getUserByCorreo(user.correoElectronico);
-          setUser(freshUser);
+          setUser(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(freshUser)) {
+              return freshUser;
+            }
+            return prev;
+          });
         } catch (e) {
           console.error("Error fetching fresh user", e);
         }
@@ -105,6 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchFreshUser();
+    const interval = setInterval(fetchFreshUser, 15000); // Polling every 15s to update real-time
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
