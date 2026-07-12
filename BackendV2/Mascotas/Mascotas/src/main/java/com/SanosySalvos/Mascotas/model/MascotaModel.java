@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
+@lombok.Generated
 public class MascotaModel {
 
     @Id

@@ -66,4 +66,19 @@ class CoincidenciasControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.estado").value("DESCARTADO"));
     }
+
+    @Test
+    void obtenerPorReporte_DeberiaRetornarListaDeCoincidencias() throws Exception {
+        Coincidencias c = new Coincidencias();
+        c.setId(2L);
+        c.setReportePerdidoId(10L);
+
+        when(coincidenciasService.obtenerPorReporte(10L)).thenReturn(java.util.List.of(c));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/coincidencias/reporte/10")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(2))
+                .andExpect(jsonPath("$[0].reportePerdidoId").value(10));
+    }
 }

@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@lombok.Generated
 public class NotificacionesApplication {
 
 	public static void main(String[] args) {

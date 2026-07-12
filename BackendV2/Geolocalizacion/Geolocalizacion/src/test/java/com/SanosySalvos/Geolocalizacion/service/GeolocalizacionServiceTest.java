@@ -135,4 +135,43 @@ class GeolocalizacionServiceTest {
         assertEquals("INACTIVO", guardado.getEstado());
         verify(reporteRepository, times(1)).save(reporteExistente);
     }
+
+    @Test
+    void guardarReporte_ConUbicacionExistente() {
+        Reporte reporte = new Reporte();
+        reporte.setUbicacion(new org.locationtech.jts.geom.GeometryFactory().createPoint(new org.locationtech.jts.geom.Coordinate(1, 1)));
+        when(reporteRepository.save(any())).thenReturn(reporte);
+        geolocalizacionService.guardarReporte(reporte);
+        verify(reporteRepository, times(1)).save(reporte);
+    }
+
+    @Test
+    void guardarReporte_SinLatitudOLongitud() {
+        Reporte reporte = new Reporte();
+        reporte.setLatitud(null);
+        reporte.setLongitud(10.0);
+        when(reporteRepository.save(any())).thenReturn(reporte);
+        geolocalizacionService.guardarReporte(reporte);
+
+        Reporte reporte2 = new Reporte();
+        reporte2.setLatitud(10.0);
+        reporte2.setLongitud(null);
+        when(reporteRepository.save(any())).thenReturn(reporte2);
+        geolocalizacionService.guardarReporte(reporte2);
+        
+        verify(reporteRepository, times(2)).save(any());
+    }
+
+    @Test
+    void guardarReporte_ConTipoNulo() {
+        Reporte reporte = new Reporte();
+        reporte.setLatitud(10.0);
+        reporte.setLongitud(20.0);
+        reporte.setTipo(null);
+        when(reporteRepository.save(any())).thenReturn(reporte);
+        geolocalizacionService.guardarReporte(reporte);
+        
+        // It will use factory fallback to PERDIDA, the factory logic handles it
+        verify(reporteRepository, times(1)).save(any());
+    }
 }

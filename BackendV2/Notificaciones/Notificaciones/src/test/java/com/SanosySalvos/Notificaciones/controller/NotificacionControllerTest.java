@@ -31,6 +31,9 @@ public class NotificacionControllerTest {
     @MockBean
     private NotificacionService notificacionService;
 
+    @MockBean
+    private com.SanosySalvos.Notificaciones.repository.NotificacionRepository notificacionRepository;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -72,5 +75,20 @@ public class NotificacionControllerTest {
         mockMvc.perform(get("/api/notificaciones/test@test.com"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[{\"titulo\":\"Notif 1\"}]"));
+    }
+
+    @Test
+    void recibirNotificacion_RetornaOk() throws Exception {
+        com.SanosySalvos.Notificaciones.dto.NotificacionSimpleRequestDTO request = new com.SanosySalvos.Notificaciones.dto.NotificacionSimpleRequestDTO();
+        request.setUsuarioId(123L);
+        request.setMensaje("Test message");
+
+        when(notificacionRepository.save(any(NotificacionModel.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        mockMvc.perform(post("/api/notificaciones/enviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Notificación simple procesada correctamente."));
     }
 }

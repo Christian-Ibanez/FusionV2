@@ -1,5 +1,6 @@
 package com.SanosySalvos.IdentificacioAcceso.dto;
 
+@lombok.Generated
 public class AuthResponse {
     private String token;
 

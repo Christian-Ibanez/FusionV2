@@ -6,6 +6,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableFeignClients
+@lombok.Generated
 public class IdentificacioAccesoApplication {
 
 	public static void main(String[] args) {

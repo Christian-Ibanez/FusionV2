@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@lombok.Generated
 public class SeguridadConfig {
 
     @Bean

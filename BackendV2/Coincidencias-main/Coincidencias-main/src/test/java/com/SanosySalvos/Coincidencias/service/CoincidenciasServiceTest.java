@@ -78,7 +78,7 @@ class CoincidenciasServiceTest {
     }
 
     @Test
-    void procesarNuevasCoincidencias_NoGuardaMatch_SiNoCoincideFisicamente() {
+    void procesarNuevasCoincidencias_GuardaMatch_AunqueNoCoincidaFisicamente_PGVector() {
         // Arrange: Simulamos un candidato cerca, pero que es FÍSICAMENTE diferente
         ReporteCruzeDTO candidatoDiferente = new ReporteCruzeDTO();
         candidatoDiferente.setId(30L);
@@ -91,9 +91,9 @@ class CoincidenciasServiceTest {
         // Act
         coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidatoDiferente));
 
-        // Assert: No debería guardar ni notificar porque no hacen match
-        verify(coincidenciasRepository, never()).save(any(Coincidencias.class));
-        verify(notificacionClient, never()).enviarNotificacion(any(NotificacionRequestDTO.class));
+        // Assert: Como PGVector hizo el filtro, guardamos la coincidencia
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
+        verify(notificacionClient, times(1)).enviarNotificacion(any(NotificacionRequestDTO.class));
     }
 
     @Test
@@ -159,22 +159,23 @@ class CoincidenciasServiceTest {
     }
 
     @Test
-    void procesarNuevasCoincidencias_NoGuardaMatch_SiRazaOColorSonNull() {
+    void procesarNuevasCoincidencias_GuardaMatch_SiRazaOColorSonNull_PGVector() {
         // Obligamos a evaluar la rama donde el atributo es nulo
         reporteMascotaPerdida.setRaza(null); 
         
         ReporteCruzeDTO candidato = new ReporteCruzeDTO();
         candidato.setId(20L);
+        candidato.setTipoReporte("ENCONTRADO");
         candidato.setLatitud(-36.82);
         candidato.setLongitud(-73.04);
         
         coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidato));
         
-        verify(coincidenciasRepository, never()).save(any(Coincidencias.class));
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
     }
 
     @Test
-    void procesarNuevasCoincidencias_NoGuardaMatch_SiEstaFueraDelRadio() {
+    void procesarNuevasCoincidencias_GuardaMatch_SiEstaFueraDelRadio_PGVector() {
         // Obligamos a evaluar la rama donde la distancia es mayor a 5km
         ReporteCruzeDTO candidatoLejos = new ReporteCruzeDTO();
         candidatoLejos.setId(20L);
@@ -188,7 +189,7 @@ class CoincidenciasServiceTest {
 
         coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidatoLejos));
 
-        verify(coincidenciasRepository, never()).save(any(Coincidencias.class));
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
     }
 
     // --- TESTS PARA ALCANZAR EL 100% DE COBERTURA ---
@@ -220,7 +221,7 @@ class CoincidenciasServiceTest {
     }
 
     @Test
-    void procesarNuevasCoincidencias_NoGuardaMatch_SiColorEsNull() {
+    void procesarNuevasCoincidencias_GuardaMatch_SiColorEsNull_PGVector() {
         // Obligamos a evaluar específicamente la rama donde el COLOR es nulo
         reporteMascotaPerdida.setColor(null); 
         
@@ -235,7 +236,75 @@ class CoincidenciasServiceTest {
         // Ejecutamos
         coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidato));
         
-        // Verificamos que no pase la validación física
-        verify(coincidenciasRepository, never()).save(any(Coincidencias.class));
+        // Verificamos que se guarde por pgvector
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
+    }
+
+    @Test
+    void procesarNuevasCoincidencias_CalculaSimilitudImagen_SiAmbosTienenUrlImagen() {
+        reporteMascotaPerdida.setUrlImagen("http://imagen1.jpg");
+
+        ReporteCruzeDTO candidato = new ReporteCruzeDTO();
+        candidato.setId(20L);
+        candidato.setTipoReporte("ENCONTRADO");
+        candidato.setRaza("Poodle");
+        candidato.setColor("Blanco");
+        candidato.setLatitud(-36.82);
+        candidato.setLongitud(-73.04);
+        candidato.setUrlImagen("http://imagen2.jpg");
+
+        coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidato));
+
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
+    }
+
+    @Test
+    void procesarNuevasCoincidencias_SimilitudImagenAlta_SiAmbosTienenMismaUrl() {
+        reporteMascotaPerdida.setUrlImagen("http://imagen-igual.jpg");
+
+        ReporteCruzeDTO candidato = new ReporteCruzeDTO();
+        candidato.setId(20L);
+        candidato.setTipoReporte("ENCONTRADO");
+        candidato.setRaza("Poodle");
+        candidato.setColor("Blanco");
+        candidato.setLatitud(-36.82);
+        candidato.setLongitud(-73.04);
+        candidato.setUrlImagen("http://imagen-igual.jpg"); // Misma URL
+
+        coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidato));
+
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
+    }
+
+    @Test
+    void procesarNuevasCoincidencias_NoCalculaSimilitudImagen_SiCandidatoNoTieneUrlImagen() {
+        reporteMascotaPerdida.setUrlImagen("http://imagen1.jpg");
+
+        ReporteCruzeDTO candidato = new ReporteCruzeDTO();
+        candidato.setId(20L);
+        candidato.setTipoReporte("ENCONTRADO");
+        candidato.setRaza("Poodle");
+        candidato.setColor("Blanco");
+        candidato.setLatitud(-36.82);
+        candidato.setLongitud(-73.04);
+        candidato.setUrlImagen(null); // Candidato no tiene imagen
+
+        coincidenciasService.procesarNuevasCoincidencias(reporteMascotaPerdida, List.of(candidato));
+
+        verify(coincidenciasRepository, times(1)).save(any(Coincidencias.class));
+    }
+
+    @Test
+    void obtenerPorReporte_RetornaListaDeCoincidencias() {
+        Long reporteId = 10L;
+        when(coincidenciasRepository.findByReportePerdidoIdOrReporteEncontradoId(reporteId, reporteId))
+                .thenReturn(List.of(coincidenciaPendiente));
+
+        List<Coincidencias> resultado = coincidenciasService.obtenerPorReporte(reporteId);
+
+        assertNotNull(resultado);
+        assertFalse(resultado.isEmpty());
+        assertEquals(1, resultado.size());
+        verify(coincidenciasRepository, times(1)).findByReportePerdidoIdOrReporteEncontradoId(reporteId, reporteId);
     }
 }

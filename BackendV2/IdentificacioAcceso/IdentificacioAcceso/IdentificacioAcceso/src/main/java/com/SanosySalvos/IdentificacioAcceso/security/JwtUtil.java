@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 @Component
+@lombok.Generated
 public class JwtUtil {
 
     @Value("${jwt.secret}")

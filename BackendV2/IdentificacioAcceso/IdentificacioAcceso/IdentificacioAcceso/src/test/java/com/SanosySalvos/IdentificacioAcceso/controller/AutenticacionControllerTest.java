@@ -49,7 +49,7 @@ public class AutenticacionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Este correo ya está en uso. ¿Deseas iniciar sesión?"));
+                .andExpect(content().json("{\"message\":\"Este correo ya está en uso. ¿Deseas iniciar sesión?\"}"));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AutenticacionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string("Usuario registrado exitosamente"));
+                .andExpect(content().json("{\"message\":\"Usuario registrado exitosamente\"}"));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class AutenticacionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Credenciales inválidas"));
+                .andExpect(content().json("{\"message\":\"Credenciales inválidas\"}"));
     }
 
     @Test

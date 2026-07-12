@@ -33,6 +33,9 @@ public class AutenticacionServiceTest {
     @Mock
     private JwtUtil jwtUtil;
 
+    @Mock
+    private com.SanosySalvos.IdentificacioAcceso.client.UsuarioClient usuarioClient;
+
     @InjectMocks
     private AutenticacionService autenticacionService;
 
@@ -76,6 +79,40 @@ public class AutenticacionServiceTest {
 
         // Assert
         verify(usuarioRepository, times(1)).save(any(UsuarioModel.class));
+        verify(usuarioClient, times(1)).crearPerfilInicial(any());
+    }
+
+    @Test
+    void registrarUsuario_LanzaExcepcion_SiFallaClient() {
+        // Arrange
+        when(usuarioRepository.findByCorreo("test@test.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("123456")).thenReturn("encodedPassword");
+        doThrow(new RuntimeException("API fallback")).when(usuarioClient).crearPerfilInicial(any());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            autenticacionService.registrarUsuario(registroRequest);
+        });
+
+        assertEquals("Credenciales creadas, pero hubo un error al crear el perfil en Usuarios: API fallback", exception.getMessage());
+        verify(usuarioRepository, times(1)).save(any(UsuarioModel.class));
+    }
+
+    @Test
+    void registrarUsuario_GuardaUsuario_ConNombreYTelefono() {
+        // Arrange
+        registroRequest.setNombre("Test Name");
+        registroRequest.setTelefono("123456789");
+        registroRequest.setRol(null);
+        when(usuarioRepository.findByCorreo("test@test.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("123456")).thenReturn("encodedPassword");
+
+        // Act
+        autenticacionService.registrarUsuario(registroRequest);
+
+        // Assert
+        verify(usuarioRepository, times(1)).save(any(UsuarioModel.class));
+        verify(usuarioClient, times(1)).crearPerfilInicial(any());
     }
 
     @Test

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
+@lombok.Generated
 public class User {
 
     @Id

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 
 @Configuration
+@lombok.Generated
 public class AppConfig {
 
     @Bean

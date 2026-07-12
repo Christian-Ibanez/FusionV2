@@ -192,13 +192,13 @@ export const Reportes = () => {
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         setNuevoReporte({ ...nuevoReporte, lat: parseFloat(lat), lng: parseFloat(lon) });
-        addNotification({ text: 'UbicaciÃ³n encontrada en el mapa.', type: 'success' });
+        addNotification({ text: 'Ubicación encontrada en el mapa.', type: 'success' });
       } else {
-        addNotification({ text: 'No se encontrÃ³ la direcciÃ³n.', type: 'warning' });
+        addNotification({ text: 'No se encontró la dirección.', type: 'warning' });
       }
     } catch(e) {
       console.error(e);
-      addNotification({ text: 'Error al buscar la ubicaciÃ³n.', type: 'danger' });
+      addNotification({ text: 'Error al buscar la ubicación.', type: 'danger' });
     } finally {
       setIsSearchingMap(false);
     }
@@ -263,7 +263,7 @@ export const Reportes = () => {
         };
         
         const response = await reportesApi.crear(payload);
-        addNotification({ text: `Â¡Reporte creado de manera exitosa!`, type: 'success' });
+        addNotification({ text: `¡Reporte creado de manera exitosa!`, type: 'success' });
         
         // Agregar al frontend local para que aparezca en la UI inmediatamente
         const newReportForUI = {
@@ -500,10 +500,10 @@ export const Reportes = () => {
           </div>
         )}
 
-        {/* Filtros Globales (Movidos abajo de las pestaÃ±as) */}
+        {/* Filtros Globales (Movidos abajo de las pestañas) */}
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem 1rem 1rem 1rem', borderRadius: '12px', border: '1px solid var(--color-border)', marginTop: isAdmin ? '1rem' : '0' }}>
           <div style={{ position: 'absolute', top: '-10px', left: '1rem', background: 'var(--color-bg)', padding: '0 0.5rem', fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500, borderRadius: '4px' }}>
-            ðŸ” Filtros Activos (Aplican al Mapa y a la Lista)
+            ”Filtros Activos (Aplican al Mapa y a la Lista)
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-sidebar)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flex: 2, minWidth: '200px' }}>
             <Search size={18} color="var(--color-text-muted)" />
@@ -611,12 +611,12 @@ export const Reportes = () => {
               
               {formError && (
                 <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 500 }}>
-                  Falta informaciÃ³n
+                  Falta información
                 </div>
               )}
 
               <div className="form-group">
-                <label className="form-label">TÃ­tulo del reporte</label>
+                <label className="form-label">Título del reporte</label>
                 <input type="text" className="form-input" placeholder="Ej. Perrito blanco perdido en Providencia" value={nuevoReporte.titulo} onChange={(e) => setNuevoReporte({ ...nuevoReporte, titulo: e.target.value })} />
               </div>
 
@@ -642,7 +642,7 @@ export const Reportes = () => {
                 </div>
               </div>
 
-              {/* Grid 2 columnas: Nombre y Edad (solo si se perdiÃ³) */}
+              {/* Grid 2 columnas: Nombre y Edad (solo si se perdió) */}
               {nuevoReporte.tipo === 'Perdido' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
@@ -650,7 +650,7 @@ export const Reportes = () => {
                     <input type="text" className="form-input" placeholder="Ej. Toby" value={nuevoReporte.nombre} onChange={(e) => setNuevoReporte({ ...nuevoReporte, nombre: e.target.value })} />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Edad (aÃ±os)</label>
+                    <label className="form-label">Edad (años)</label>
                     <input 
                       type="number" 
                       className="form-input" 
@@ -713,12 +713,12 @@ export const Reportes = () => {
                 </div>
               </div>
 
-              {/* Campo de DescripciÃ³n Opcional */}
+              {/* Campo de Descripción Opcional */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label className="form-label">DescripciÃ³n adicional (Opcional)</label>
+                <label className="form-label">Descripción adicional (Opcional)</label>
                 <textarea 
                   className="form-input" 
-                  placeholder="Ej. TenÃ­a un collar rojo, es muy asustadizo, tiene una mancha en la oreja..." 
+                  placeholder="Ej. Tenía un collar rojo, es muy asustadizo, tiene una mancha en la oreja..." 
                   value={nuevoReporte.descripcion} 
                   onChange={(e) => setNuevoReporte({ ...nuevoReporte, descripcion: e.target.value })}
                   style={{ minHeight: '80px', resize: 'vertical' }}
@@ -727,7 +727,7 @@ export const Reportes = () => {
 
               {/* Zona de subida de imagen estilizada (Drag & Drop look) */}
               <div className="form-group">
-                <label className="form-label">FotografÃ­a</label>
+                <label className="form-label">Fotografía</label>
                 <label 
                   style={{ 
                     display: 'flex', 
@@ -748,7 +748,7 @@ export const Reportes = () => {
                     Sube una foto de la mascota
                   </span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                    {nuevoReporte.image ? <span style={{color: 'var(--color-success)'}}>Seleccionado: {nuevoReporte.image.name}</span> : 'PNG, JPG o JPEG (MÃ¡x. 5MB)'}
+                    {nuevoReporte.image ? <span style={{color: 'var(--color-success)'}}>Seleccionado: {nuevoReporte.image.name}</span> : 'PNG, JPG o JPEG (Máx. 5MB)'}
                   </span>
                   
                   <div className="btn" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.5rem 1rem' }}>
@@ -781,11 +781,11 @@ export const Reportes = () => {
                 )}
               </div>
 
-              {/* SecciÃ³n del Mapa con Autocompletado */}
+              {/* Sección del Mapa con Autocompletado */}
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">UbicaciÃ³n del suceso</label>
+                <label className="form-label">Ubicación del suceso</label>
                 
-                {/* Input de BÃºsqueda de UbicaciÃ³n */}
+                {/* Input de Búsqueda de Ubicación */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-sidebar)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flex: 1 }}>
                     <Map size={18} color="var(--color-text-muted)" />
@@ -817,7 +817,7 @@ export const Reportes = () => {
                   </MapContainer>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                  * Puedes hacer clic directamente en el mapa para ajustar con precisiÃ³n la ubicaciÃ³n donde viste o perdiste a la mascota. El cÃ­rculo indica el Ã¡rea de influencia del reporte.
+                  * Puedes hacer clic directamente en el mapa para ajustar con precisión la ubicación donde viste o perdiste a la mascota. El círculo indica el área de influencia del reporte.
                 </p>
               </div>
             </div>

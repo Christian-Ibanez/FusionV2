@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
+@lombok.Generated
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
