@@ -25,15 +25,15 @@ const VetIcon = L.divIcon({
 });
 
 const razasPorEspecie: Record<string, string[]> = {
-  'Perro': ['Mestizo', 'Poodle', 'Pastor AlemÃ¡n', 'Labrador', 'Bulldog', 'Chihuahua', 'Golden Retriever', 'Pitbull', 'Husky', 'Pug', 'Otro'],
-  'Gato': ['Europeo/Mestizo', 'Persa', 'SiamÃ©s', 'Angora', 'Maine Coon', 'Bengala', 'Esfinge', 'Otro'],
-  'Conejo': ['Mestizo', 'Cabeza de LeÃ³n', 'Belier', 'Angora', 'Rex', 'HolandÃ©s Enano', 'Otro']
+  'Perro': ['Mestizo', 'Poodle', 'Pastor Alemán', 'Labrador', 'Bulldog', 'Chihuahua', 'Golden Retriever', 'Pitbull', 'Husky', 'Pug', 'Otro'],
+  'Gato': ['Europeo/Mestizo', 'Persa', 'Siamés', 'Angora', 'Maine Coon', 'Bengala', 'Esfinge', 'Otro'],
+  'Conejo': ['Mestizo', 'Cabeza de León', 'Belier', 'Angora', 'Rex', 'Holandés Enano', 'Otro']
 };
 
 const coloresPorEspecie: Record<string, string[]> = {
-  'Perro': ['Negro', 'Blanco', 'MarrÃ³n', 'Dorado', 'Crema', 'Gris', 'Rojo', 'Bicolor', 'Atigrado', 'Merle'],
-  'Gato': ['Blanco', 'Negro', 'Gris', 'Naranja', 'Crema', 'MarrÃ³n', 'Atigrado', 'Carey', 'CalicÃ³', 'Point'],
-  'Conejo': ['Blanco', 'Negro', 'Gris', 'Chinchilla', 'MarrÃ³n', 'Leonado', 'Azul', 'Mariposa', 'ArlequÃ­n']
+  'Perro': ['Negro', 'Blanco', 'Marrón', 'Dorado', 'Crema', 'Gris', 'Rojo', 'Bicolor', 'Atigrado', 'Merle'],
+  'Gato': ['Blanco', 'Negro', 'Gris', 'Naranja', 'Crema', 'Marrón', 'Atigrado', 'Carey', 'Calicó', 'Point'],
+  'Conejo': ['Blanco', 'Negro', 'Gris', 'Chinchilla', 'Marrón', 'Leonado', 'Azul', 'Mariposa', 'Arlequín']
 };
 
 const MapClickHandler = ({ onLocationSelected }: { onLocationSelected: (lat: number, lng: number) => void }) => {
@@ -73,7 +73,7 @@ export const Reportes = () => {
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEspecie, setFilterEspecie] = useState('Todos');
   
-  // PestaÃ±as para el ciudadano alternar vistas
+  // Pestañas para el ciudadano alternar vistas
   const [activeTab, setActiveTab] = useState<'mis_reportes' | 'todos'>(isAdmin ? 'todos' : 'mis_reportes');
 
   // Address search for Map

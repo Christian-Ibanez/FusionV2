@@ -419,7 +419,7 @@ export const Overview = ({ menuItems: _menuItems }: { menuItems: any[] }) => {
                   </div>
                   <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                     <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Microservicios</p>
-                    <p style={{ margin: 0, fontWeight: 500, color: '#fff' }}>Operativos (4/4)</p>
+                    <p style={{ margin: 0, fontWeight: 500, color: '#fff' }}>Operativos (7/7)</p>
                   </div>
                 </div>
               </div>
