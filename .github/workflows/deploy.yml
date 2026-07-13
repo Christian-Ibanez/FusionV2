@@ -1,0 +1,20 @@
+name: CI/CD Funcionando
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Mensaje de confirmación
+        run: echo "¡El flujo de CI/CD está funcionando correctamente al hacer push en FusionV2!"
